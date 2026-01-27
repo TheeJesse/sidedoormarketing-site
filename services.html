@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Services - Side Door Marketing</title>
+    <style>
+        /* Base styles */
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #28a745;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: var(--light);
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        section {
+            padding: 60px 0;
+        }
+        
+        h1, h2, h3, h4 {
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+        }
+        
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 600;
+        }
+        
+        h3 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .btn-white {
+            background-color: white;
+            color: var(--primary);
+        }
+        
+        .btn-white:hover {
+            background-color: #f0f0f0;
+            color: #2980b9;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .mb-4 {
+            margin-bottom: 40px;
+        }
+        
+        .mb-2 {
+            margin-bottom: 20px;
+        }
+        
+        /* Header styles */
+        header {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo span {
+            margin-left: 10px;
+        }
+        
+        .nav-links {
+            display: flex;
+            list-style: none;
+        }
+        
+        .nav-links li {
+            margin-left: 30px;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+        
+        /* Page header */
+        .page-header {
+            background-color: var(--secondary);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+        
+        /* Service sections */
+        .service-section {
+            padding: 80px 0;
+        }
+        
+        .service-section:nth-child(odd) {
+            background-color: white;
+        }
+        
+        .service-content {
+            display: flex;
+            gap: 50px;
+            align-items: center;
+        }
+        
+        .service-section:nth-child(even) .service-content {
+            flex-direction: row-reverse;
+        }
+        
+        .service-image {
+            flex: 0 0 45%;
+        }
+        
+        .service-image img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .service-info {
+            flex: 1;
+        }
+        
+        .service-tag {
+            display: inline-block;
+            background-color: var(--primary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .service-info h3 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+        
+        .service-info p {
+            margin-bottom: 15px;
+        }
+        
+        /* Tools section */
+        .tools {
+            background-color: #f5f5f5;
+            padding: 60px 0;
+            text-align: center;
+        }
+        
+        .tools h2 {
+            margin-bottom: 40px;
+        }
+        
+        .tools-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .tool-item {
+            background-color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-weight: 500;
+        }
+        
+        /* CTA section */
+        .cta {
+            background-color: var(--primary);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+        
+        .cta h2 {
+            margin-bottom: 20px;
+        }
+        
+        .cta p {
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Footer */
+        footer {
+            background-color: var(--secondary);
+            color: white;
+            padding: 60px 0 30px;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .footer-col h3 {
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+        
+        .footer-col ul {
+            list-style: none;
+        }
+        
+        .footer-col ul li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-col a {
+            color: #ddd;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .footer-col a:hover {
+            color: white;
+        }
+        
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 30px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            h2 {
+                font-size: 2rem;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .nav-links {
+                position: fixed;
+                top: 80px;
+                left: 0;
+                right: 0;
+                background-color: white;
+                flex-direction: column;
+                align-items: center;
+                padding: 20px 0;
+                box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+                transform: translateY(-150%);
+                transition: transform 0.3s ease;
+            }
+            
+            .nav-links.active {
+                transform: translateY(0);
+            }
+            
+            .nav-links li {
+                margin: 15px 0;
+            }
+            
+            .service-content {
+                flex-direction: column;
+            }
+            
+            .service-section:nth-child(even) .service-content {
+                flex-direction: column;
+            }
+            
+            .service-image {
+                flex: 0 0 100%;
+                margin-bottom: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <nav class="navbar">
+                <a href="index.html" class="logo">
+                    🧰 <span>Side Door Marketing</span>
+                </a>
+                <button class="mobile-menu-btn">☰</button>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="services.html">Services</a></li>
+                    <li><a href="blog.html">Blog</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1>AI Tools Built for Tradespeople</h1>
+            <p>Save time, book more jobs, and focus on what you do best.</p>
+        </div>
+    </section>
+
+    <!-- AI Chatbots Section -->
+    <section class="service-section">
+        <div class="container">
+            <div class="service-content">
+                <div class="service-image">
+                    <img src="/api/placeholder/400/320" alt="AI Chatbot">
+                </div>
+                <div class="service-info">
+                    <span class="service-tag">Customer Service</span>
+                    <h3>AI Chatbots</h3>
+                    <p>Answer website visitor questions instantly, 24/7. Capture leads and qualify potential clients automatically.</p>
+                    <p>Our chatbots are trained on your business information, providing accurate answers about your services, pricing, and availability.</p>
+                    <p>Integrates directly with your website and can send leads straight to your email or CRM.</p>
+                    <a href="#" class="btn">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Voice Appointment Agents Section -->
+    <section class="service-section">
+        <div class="container">
+            <div class="service-content">
+                <div class="service-image">
+                    <img src="/api/placeholder/400/320" alt="Voice Appointment Agent">
+                </div>
+                <div class="service-info">
+                    <span class="service-tag">Appointment Scheduling</span>
+                    <h3>Voice Appointment Agents</h3>
+                    <p>Let an AI receptionist answer calls, set jobs, and follow up—even when you're on-site.</p>
+                    <p>Our Voice Appointment Agents sound natural, book appointments in real time, and integrate seamlessly with your existing calendar systems.</p>
+                    <p>Stop missing calls when you're working, and ensure every potential client gets a professional response—day or night.</p>
+                    <a href="#" class="btn">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Social Media Tools Section -->
+    <section class="service-section">
+        <div class="container">
+            <div class="service-content">
+                <div class="service-image">
+                    <img src="/api/placeholder/400/320" alt="Social Media Tools">
+                </div>
+                <div class="service-info">
+                    <span class="service-tag">Digital Marketing</span>
+                    <h3>Social Media Tools</h3>
+                    <p>Stop stressing about posts. Our system auto-generates content, writes captions, and keeps your business visible.</p>
+                    <p>With our social media automation, you simply approve and move on. We'll help you maintain a consistent presence online without pulling you away from client work.</p>
+                    <p>Perfect for tradespeople who know they need to be online but don't have time to manage multiple platforms.</p>
+                    <a href="#" class="btn">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tools Section -->
+    <section class="tools">
+        <div class="container">
+            <h2>Everything is custom-built for your business using:</h2>
+            <div class="tools-grid">
+                <div class="tool-item">ChatGPT</div>
+                <div class="tool-item">Zapier</div>
+                <div class="tool-item">Make</div>
+                <div class="tool-item">Vapi AI</div>
+                <div class="tool-item">Notion</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <h2>Ready to make your business work smarter?</h2>
+            <p>Let's discuss which tools can make the biggest impact for your specific trades business.</p>
+            <div>
+                <a href="https://calendly.com/jesse981/automation-audit" class="btn btn-white">Book a Demo</a>
+                <a href="https://calendly.com/jesse981/automation-audit" class="btn btn-white" style="margin-left: 20px;">Let's Talk</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <h3>Side Door Marketing</h3>
+                    <p>AI tools built for tradespeople.</p>
+                </div>
+                <div class="footer-col">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="services.html">Services</a></li>
+                        <li><a href="blog.html">Blog</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Services</h3>
+                    <ul>
+                        <li><a href="services.html">AI Chatbots</a></li>
+                        <li><a href="services.html">Voice Appointment Agents</a></li>
+                        <li><a href="services.html">Social Media Tools</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Contact</h3>
+                    <ul>
+                        <li><a href="mailto:jesse@trysidedoormarketing.net">jesse@trysidedoormarketing.net</a></li>
+                        <li><a href="https://calendly.com/jesse981/automation-audit">Book a Call</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Side Door Marketing. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript for mobile menu toggle -->
+    <script>
+        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+        const navLinks = document.querySelector('.nav-links');
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+    </script>
+    <div id="chatbot-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/marked@3.0.7/marked.min.js"></script>
+    <script src="https://karabo.ai/smart-js-chatbot-link/ebdfeba3-2a09-4226-9c1c-5f00f9b3292d/"></script>
+</body>
+</html>
