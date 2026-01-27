@@ -1,421 +1,424 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Side Door Marketing - AI Tools for Tradespeople</title>
-    <style>
-        /* Base styles (consistent with other pages) */
-        :root {
-            --primary: #3498db;
-            --secondary: #2c3e50;
-            --accent: #e74c3c;
-            --light: #f8f9fa;
-            --dark: #343a40;
-            --success: #28a745;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: var(--dark);
-            background-color: var(--light);
-        }
-        
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        
-        section {
-            padding: 60px 0;
-        }
-        
-        h1, h2, h3, h4 {
-            margin-bottom: 20px;
-            line-height: 1.2;
-        }
-        
-        h1 {
-            font-size: 3.5rem;
-            font-weight: 700;
-        }
-        
-        h2 {
-            font-size: 2.5rem;
-            font-weight: 600;
-        }
-        
-        h3 {
-            font-size: 1.8rem;
-            font-weight: 600;
-        }
-        
-        p {
-            margin-bottom: 1rem;
-        }
-        
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: var(--primary);
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: none;
-            font-size: 1rem;
-        }
-        
-        .btn:hover {
-            background-color: #2980b9;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Side Door Marketing — Turn Missed Calls Into Booked Jobs</title>
+  <meta name="description" content="We install a simple quote-request link + notifications so you capture leads while you're on the job. Built for trades businesses." />
+  <style>
+    :root {
+      --primary: #3498db;
+      --secondary: #2c3e50;
+      --accent: #e74c3c;
+      --light: #f8f9fa;
+      --dark: #343a40;
+      --muted: #6c757d;
+      --success: #28a745;
+      --card: #ffffff;
+      --border: rgba(0,0,0,0.08);
+    }
 
-        .btn-secondary {
-             background-color: var(--secondary);
-        }
-        .btn-secondary:hover {
-             background-color: #1e2b38;
-        }
-        
-        .text-center {
-            text-align: center;
-        }
-        
-        /* Header styles */
-        header {
-            background-color: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 0;
-        }
-        
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--secondary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-        }
-        
-        .logo span {
-            margin-left: 10px;
-        }
-        
-        .nav-links {
-            display: flex;
-            list-style: none;
-        }
-        
-        .nav-links li {
-            margin-left: 30px;
-        }
-        
-        .nav-links a {
-            text-decoration: none;
-            color: var(--dark);
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-        
-        .nav-links a:hover {
-            color: var(--primary);
-        }
-        
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1.5rem;
-        }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* Hero Section */
-        .hero {
-            background-color: var(--secondary);
-            color: white;
-            padding: 120px 0;
-            text-align: center;
-        }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--dark);
+      background: var(--light);
+    }
 
-        .hero h1 {
-            font-size: 3.8rem;
-            margin-bottom: 20px;
-        }
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
 
-        .hero p {
-            font-size: 1.3rem;
-            max-width: 700px;
-            margin: 0 auto 40px;
-            opacity: 0.9;
-        }
+    section { padding: 72px 0; }
 
-        /* Features Section */
-        .features {
-            padding: 80px 0;
-        }
+    h1, h2, h3 { line-height: 1.15; }
+    h1 { font-size: 3.2rem; font-weight: 800; margin-bottom: 16px; }
+    h2 { font-size: 2.2rem; font-weight: 700; margin-bottom: 18px; }
+    h3 { font-size: 1.35rem; font-weight: 700; margin-bottom: 12px; }
 
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 40px;
-            margin-top: 40px;
-        }
+    p { margin-bottom: 1rem; }
 
-        .feature-card {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            text-align: center;
-        }
+    .muted { color: var(--muted); }
 
-        .feature-icon {
-            font-size: 3rem;
-            color: var(--primary);
-            margin-bottom: 20px;
-        }
+    .btn {
+      display: inline-block;
+      padding: 12px 20px;
+      background: var(--primary);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 700;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+    }
 
-        .feature-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-            color: var(--secondary);
-        }
+    .btn:hover {
+      background: #2980b9;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.10);
+    }
 
-        /* CTA Section */
-        .cta-section {
-            background-color: var(--primary);
-            color: white;
-            padding: 80px 0;
-            text-align: center;
-        }
+    .btn-secondary { background: var(--secondary); }
+    .btn-secondary:hover { background: #1e2b38; }
 
-        .cta-section h2 {
-            margin-bottom: 30px;
-        }
-        
-        /* Footer */
-        footer {
-            background-color: var(--secondary);
-            color: white;
-            padding: 60px 0 30px;
-        }
-        
-        .footer-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 40px;
-            margin-bottom: 40px;
-        }
-        
-        .footer-col h3 {
-            margin-bottom: 20px;
-            font-size: 1.3rem;
-        }
-        
-        .footer-col ul {
-            list-style: none;
-        }
-        
-        .footer-col ul li {
-            margin-bottom: 10px;
-        }
-        
-        .footer-col a {
-            color: #ddd;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-        
-        .footer-col a:hover {
-            color: white;
-        }
-        
-        .footer-bottom {
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 30px;
-            text-align: center;
-            font-size: 0.9rem;
-            color: #aaa;
-        }
-        
-        /* Responsive design */
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2.8rem;
-            }
-            
-            h2 {
-                font-size: 2rem;
-            }
+    /* Header */
+    header {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
 
-            .hero h1 {
-                font-size: 3rem;
-            }
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+      gap: 16px;
+    }
 
-            .hero p {
-                font-size: 1.1rem;
-            }
-            
-            .mobile-menu-btn {
-                display: block;
-            }
-            
-            .nav-links {
-                position: fixed;
-                top: 80px; /* Match header height */
-                left: 0;
-                right: 0;
-                background-color: white;
-                flex-direction: column;
-                align-items: center;
-                padding: 20px 0;
-                box-shadow: 0 5px 10px rgba(0,0,0,0.1);
-                transform: translateY(-150%);
-                transition: transform 0.3s ease;
-            }
-            
-            .nav-links.active {
-                transform: translateY(0);
-            }
-            
-            .nav-links li {
-                margin: 15px 0;
-            }
-        }
-    </style>
+    .logo {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--secondary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+    }
+
+    .nav-links { display: flex; list-style: none; gap: 18px; align-items: center; }
+    .nav-links a { text-decoration: none; color: var(--dark); font-weight: 600; }
+    .nav-links a:hover { color: var(--primary); }
+
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.6rem;
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(180deg, var(--secondary), #16212b);
+      color: white;
+      padding: 96px 0;
+      text-align: left;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .hero p {
+      font-size: 1.15rem;
+      opacity: 0.92;
+      max-width: 46rem;
+    }
+
+    .hero .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+
+    .hero-bullets {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    .hero-bullets ul { list-style: none; }
+    .hero-bullets li { margin: 10px 0; }
+
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      margin-bottom: 14px;
+    }
+
+    /* Cards / grids */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+    }
+
+    .card .icon { font-size: 2rem; margin-bottom: 10px; }
+
+    /* Pricing */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .price {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--secondary);
+      margin: 10px 0 14px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 800;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(52,152,219,0.12);
+      color: #1f6fa1;
+      border: 1px solid rgba(52,152,219,0.25);
+    }
+
+    .list { margin-top: 10px; }
+    .list li { margin: 8px 0; }
+
+    /* CTA band */
+    .cta-band {
+      background: var(--primary);
+      color: white;
+      text-align: center;
+      padding: 72px 0;
+    }
+
+    .cta-band h2 { margin-bottom: 12px; }
+
+    /* Footer */
+    footer {
+      background: var(--secondary);
+      color: white;
+      padding: 52px 0 28px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    footer a { color: #d7e8f6; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.14);
+      padding-top: 18px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.75);
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 2.5rem; }
+      h2 { font-size: 1.9rem; }
+
+      .mobile-menu-btn { display: inline-block; }
+
+      .nav-links {
+        position: fixed;
+        top: 64px;
+        left: 0;
+        right: 0;
+        background: white;
+        flex-direction: column;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--border);
+        transform: translateY(-150%);
+        transition: transform 0.2s ease;
+      }
+
+      .nav-links.active { transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <div class="container">
-            <nav class="navbar">
-                <a href="index.html" class="logo">
-                    🧰 <span>Side Door Marketing</span>
-                </a>
-                <button class="mobile-menu-btn">☰</button>
-                <ul class="nav-links">
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="services.html">Services</a></li>
-                    <li><a href="blog.html">Blog</a></li>
-                    <li><a href="about.html">About</a></li>
-                    <li><a href="contact.html">Contact</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
+  <header>
+    <div class="container">
+      <nav class="navbar">
+        <a href="index.html" class="logo">🧰 <span>Side Door Marketing</span></a>
+        <button class="mobile-menu-btn" aria-label="Open menu">☰</button>
+        <ul class="nav-links">
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="contact.html">Contact</a></li>
+          <li><a class="btn btn-secondary" href="https://calendly.com/jesse981/automation-audit">Book a call</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <h1>Stop Drowning in Admin. Start Getting Time Back.</h1>
-            <p>Practical AI tools designed specifically for busy tradespeople like you. Automate tasks, book more jobs, and focus on the work that matters.</p>
-            <a href="services.html" class="btn" style="margin-right: 15px;">See Our Services</a>
-            <a href="https://calendly.com/jesse981/automation-audit" class="btn btn-secondary">Book a Free Call</a>
-        </div>
-    </section>
+  <section class="hero">
+    <div class="container">
+      <div class="hero-grid">
+        <div>
+          <div class="pill">Built for trades businesses</div>
+          <h1>Turn missed calls into booked jobs.</h1>
+          <p>
+            I install a simple <strong>quote-request link</strong> that captures the right info while you’re on a job —
+            then routes it into a clean lead list with instant notifications.
+            You stop losing “maybe” leads and start following up fast.
+          </p>
 
-    <!-- Features Section -->
-    <section class="features">
-        <div class="container">
-            <h2 class="text-center">How AI Can Help Your Trades Business</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">💬</div>
-                    <h3>Answer Questions 24/7</h3>
-                    <p>Let an AI chatbot handle common customer inquiries on your website, day or night.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📞</div>
-                    <h3>Never Miss a Call</h3>
-                    <p>Use an AI voice agent to answer calls, book appointments, and follow up with leads.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📅</div>
-                    <h3>Automate Scheduling</h3>
-                    <p>Integrate AI with your calendar to automatically book jobs and send reminders.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+          <div class="cta-row">
+            <a class="btn" href="https://calendly.com/jesse981/automation-audit">Book a 15‑min setup call</a>
+            <a class="btn btn-secondary" href="#pricing">See pricing</a>
+          </div>
 
-     <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="container">
-            <h2>Ready to Simplify Your Business?</h2>
-            <a href="contact.html" class="btn btn-secondary">Let's Talk About Your Needs</a>
+          <p class="muted" style="margin-top: 14px;">
+            Want to test it first? Ask about a <strong>pilot</strong> (limited).
+          </p>
         </div>
-    </section>
 
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-col">
-                    <h3>Side Door Marketing</h3>
-                    <p>AI tools built for tradespeople.</p>
-                </div>
-                <div class="footer-col">
-                    <h3>Quick Links</h3>
-                    <ul>
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="services.html">Services</a></li>
-                        <li><a href="blog.html">Blog</a></li>
-                        <li><a href="about.html">About</a></li>
-                        <li><a href="contact.html">Contact</a></li>
-                    </ul>
-                </div>
-                <div class="footer-col">
-                    <h3>Services</h3>
-                    <ul>
-                        <li><a href="services.html">AI Chatbots</a></li>
-                        <li><a href="services.html">Voice Appointment Agents</a></li>
-                        <li><a href="services.html">Social Media Tools</a></li>
-                    </ul>
-                </div>
-                <div class="footer-col">
-                    <h3>Contact</h3>
-                    <ul>
-                        <li><a href="mailto:jesse@trysidedoormarketing.net">jesse@trysidedoormarketing.net</a></li>
-                        <li><a href="https://calendly.com/jesse981/automation-audit">Book a Call</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 Side Door Marketing. All rights reserved.</p>
-            </div>
+        <div class="hero-bullets">
+          <h3 style="margin-bottom: 10px;">What you get</h3>
+          <ul>
+            <li>✅ Lead capture link you can text to prospects or add to Google profile</li>
+            <li>✅ Questions tailored to your trade (so quotes are faster)</li>
+            <li>✅ Instant notifications (so leads don’t sit overnight)</li>
+            <li>✅ Handoff so you can run it without me</li>
+          </ul>
         </div>
-    </footer>
+      </div>
+    </div>
+  </section>
 
-    <!-- JavaScript for mobile menu toggle -->
-    <script>
-        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-        const navLinks = document.querySelector('.nav-links');
-        
-        mobileMenuBtn.addEventListener('click', () => {
-            navLinks.classList.toggle('active');
-        });
-    </script>
+  <section id="how">
+    <div class="container">
+      <h2>How it works</h2>
+      <p class="muted">Three steps. No fluff.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="icon">🧩</div>
+          <h3>1) Install</h3>
+          <p>We set up your quote-request form + lead list + notifications.</p>
+        </div>
+        <div class="card">
+          <div class="icon">📲</div>
+          <h3>2) Route</h3>
+          <p>Leads flow into one clean place (and you get pinged immediately).</p>
+        </div>
+        <div class="card">
+          <div class="icon">🔑</div>
+          <h3>3) Handoff</h3>
+          <p>You get the keys + a simple checklist so it stays running.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="container">
+      <h2>Pricing</h2>
+      <p class="muted">Start small. Upgrade later if you want the full system.</p>
+
+      <div class="pricing-grid">
+        <div class="card">
+          <span class="badge">Quick Install</span>
+          <div class="price">$250</div>
+          <ul class="list">
+            <li>• Quote request link + basic questions</li>
+            <li>• Lead list (simple CRM-style sheet)</li>
+            <li>• Notifications (text/email)</li>
+            <li>• Add link to Google profile/website (if you have access)</li>
+          </ul>
+        </div>
+
+        <div class="card" style="border: 2px solid rgba(52,152,219,0.35);">
+          <span class="badge">Full Install</span>
+          <div class="price">$500</div>
+          <ul class="list">
+            <li>• Everything in Quick Install</li>
+            <li>• Missed-call follow-up script (text/voicemail)</li>
+            <li>• Basic review workflow (ask at the right time)</li>
+            <li>• Handoff video + a simple operating checklist</li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="muted" style="margin-top: 14px;">
+        Don’t want pricing yet? Book a call and I’ll recommend the smallest thing that helps.
+      </p>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container">
+      <h2>Want this installed for your business?</h2>
+      <p style="opacity: 0.92; max-width: 52rem; margin: 0 auto 18px;">
+        If you’re in the trades and you’re missing calls while you’re on jobs, this is a fast win.
+      </p>
+      <a class="btn btn-secondary" href="https://calendly.com/jesse981/automation-audit">Book a 15‑min call</a>
+      <a class="btn" style="margin-left: 10px;" href="contact.html">Or email me</a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <h3>Side Door Marketing</h3>
+          <p class="muted" style="color: rgba(255,255,255,0.75);">Simple automations for trades businesses.</p>
+        </div>
+        <div>
+          <h3>Links</h3>
+          <p><a href="#how">How it works</a></p>
+          <p><a href="#pricing">Pricing</a></p>
+          <p><a href="contact.html">Contact</a></p>
+        </div>
+        <div>
+          <h3>Contact</h3>
+          <p><a href="mailto:jesse@trysidedoormarketing.net">jesse@trysidedoormarketing.net</a></p>
+          <p><a href="https://calendly.com/jesse981/automation-audit">Book a call</a></p>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 Side Door Marketing. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+    const navLinks = document.querySelector('.nav-links');
+    mobileMenuBtn.addEventListener('click', () => navLinks.classList.toggle('active'));
+  </script>
 </body>
 </html>
