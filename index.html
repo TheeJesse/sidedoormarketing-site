@@ -172,35 +172,6 @@
 
     .card .icon { font-size: 2rem; margin-bottom: 10px; }
 
-    /* Pricing */
-    .pricing-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 18px;
-      margin-top: 22px;
-    }
-
-    .price {
-      font-size: 2rem;
-      font-weight: 900;
-      color: var(--secondary);
-      margin: 10px 0 14px;
-    }
-
-    .badge {
-      display: inline-block;
-      font-size: 0.8rem;
-      font-weight: 800;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(52,152,219,0.12);
-      color: #1f6fa1;
-      border: 1px solid rgba(52,152,219,0.25);
-    }
-
-    .list { margin-top: 10px; }
-    .list li { margin: 8px 0; }
-
     /* CTA band */
     .cta-band {
       background: var(--primary);
@@ -240,7 +211,6 @@
     @media (max-width: 900px) {
       .hero-grid { grid-template-columns: 1fr; }
       .grid-3 { grid-template-columns: 1fr; }
-      .pricing-grid { grid-template-columns: 1fr; }
       .footer-grid { grid-template-columns: 1fr; }
     }
 
@@ -275,7 +245,7 @@
         <button class="mobile-menu-btn" aria-label="Open menu">☰</button>
         <ul class="nav-links">
           <li><a href="#how">How it works</a></li>
-          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#how">How it works</a></li>
           <li><a href="contact.html">Contact</a></li>
           <li><a class="btn btn-secondary" href="https://calendly.com/jesse981/automation-audit">Book a call</a></li>
         </ul>
@@ -297,11 +267,10 @@
 
           <div class="cta-row">
             <a class="btn" href="https://calendly.com/jesse981/automation-audit">Book a 15‑min setup call</a>
-            <a class="btn btn-secondary" href="#pricing">See pricing</a>
-          </div>
+            </div>
 
           <p class="muted" style="margin-top: 14px;">
-            Want to test it first? Ask about a <strong>pilot</strong> (limited).
+            Quick call, then we build it.
           </p>
         </div>
 
@@ -343,42 +312,7 @@
     </div>
   </section>
 
-  <section id="pricing">
-    <div class="container">
-      <h2>Pricing</h2>
-      <p class="muted">Start small. Upgrade later if you want the full system.</p>
-
-      <div class="pricing-grid">
-        <div class="card">
-          <span class="badge">Quick Install</span>
-          <div class="price">$250</div>
-          <ul class="list">
-            <li>• Quote request link + basic questions</li>
-            <li>• Lead list (simple CRM-style sheet)</li>
-            <li>• Notifications (text/email)</li>
-            <li>• Add link to Google profile/website (if you have access)</li>
-          </ul>
-        </div>
-
-        <div class="card" style="border: 2px solid rgba(52,152,219,0.35);">
-          <span class="badge">Full Install</span>
-          <div class="price">$500</div>
-          <ul class="list">
-            <li>• Everything in Quick Install</li>
-            <li>• Missed-call follow-up script (text/voicemail)</li>
-            <li>• Basic review workflow (ask at the right time)</li>
-            <li>• Handoff video + a simple operating checklist</li>
-          </ul>
-        </div>
-      </div>
-
-      <p class="muted" style="margin-top: 14px;">
-        Don’t want pricing yet? Book a call and I’ll recommend the smallest thing that helps.
-      </p>
-    </div>
-  </section>
-
-  <section class="cta-band">
+<section class="cta-band">
     <div class="container">
       <h2>Want this installed for your business?</h2>
       <p style="opacity: 0.92; max-width: 52rem; margin: 0 auto 18px;">
@@ -399,7 +333,6 @@
         <div>
           <h3>Links</h3>
           <p><a href="#how">How it works</a></p>
-          <p><a href="#pricing">Pricing</a></p>
           <p><a href="contact.html">Contact</a></p>
         </div>
         <div>
