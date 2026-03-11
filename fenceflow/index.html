@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>FenceFlow — Peace of Mind Maintenance</title>
+  <link rel="stylesheet" href="print.css" media="print">
+  <style>
+    :root {
+      --brand: #1B4F8A;
+      --brand-dark: #143d6b;
+      --brand-light: #e8f0fb;
+      --accent: #2e7d32;
+      --warn: #e65100;
+      --border: #d0d0d0;
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --muted: #666;
+      --tap: 48px;
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      background: var(--brand);
+      color: white;
+      padding: 14px 16px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+    .app-header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .app-header .subtitle {
+      font-size: 11px;
+      opacity: .75;
+      margin-top: 1px;
+    }
+    .header-left { display: flex; flex-direction: column; }
+    .settings-btn {
+      background: rgba(255,255,255,.15);
+      border: none;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── BOTTOM TAB NAV ── */
+    .tab-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+      box-shadow: 0 -2px 10px rgba(0,0,0,.08);
+    }
+    .tab-nav button {
+      flex: 1;
+      padding: 10px 4px 14px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: color .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tab-nav button .icon { font-size: 22px; }
+    .tab-nav button.active { color: var(--brand); }
+    .tab-nav button.active .tab-indicator { display: block; }
+    .tab-indicator { display: none; width: 24px; height: 3px; background: var(--brand); border-radius: 2px; margin-top: 2px; }
+
+    /* ── TABS ── */
+    .tab { display: none; padding: 16px; }
+    .tab.active { display: block; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--brand);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--brand-light);
+    }
+
+    /* ── FORM FIELDS ── */
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
+    label .req { color: #c62828; }
+    input[type="text"],
+    input[type="tel"],
+    input[type="email"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      min-height: var(--tap);
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: Arial, sans-serif;
+      color: var(--text);
+      background: white;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color .15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--brand);
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0l6 8 6-8z' fill='%23666'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+    textarea { min-height: 90px; resize: vertical; }
+
+    /* ── LF GRID ── */
+    .lf-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .lf-total {
+      grid-column: 1 / -1;
+      background: var(--brand-light);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .lf-total-label { font-size: 14px; font-weight: 700; color: var(--brand); }
+    .lf-total-value { font-size: 24px; font-weight: 800; color: var(--brand); }
+
+    /* ── GATES ── */
+    .gate-row {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+    }
+    .gate-row-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .gate-label { font-size: 13px; font-weight: 700; color: var(--brand); }
+    .remove-gate-btn {
+      background: none;
+      border: none;
+      color: #c62828;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    .add-gate-btn {
+      width: 100%;
+      min-height: 44px;
+      background: white;
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    /* ── CHECKLIST ── */
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--bg);
+      cursor: pointer;
+    }
+    .checklist-item:last-child { border-bottom: none; }
+    .checklist-item input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      min-height: auto;
+      accent-color: var(--brand);
+      flex-shrink: 0;
+    }
+    .checklist-item span { font-size: 15px; }
+
+    /* ── WARNING BANNER ── */
+    .warn-banner {
+      background: #fff3e0;
+      border: 1.5px solid #ff9800;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--warn);
+      font-weight: 600;
+      display: none;
+    }
+    .warn-banner.visible { display: block; }
+
+    /* ── NEXT BUTTON ── */
+    .next-btn {
+      width: 100%;
+      min-height: 52px;
+      background: var(--brand);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      letter-spacing: .3px;
+    }
+    .next-btn:active { background: var(--brand-dark); }
+
+    /* ── CALCULATOR TAB ── */
+    .calc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--bg);
+      gap: 8px;
+    }
+    .calc-row:last-child { border-bottom: none; }
+    .calc-label { font-size: 14px; color: var(--text); flex: 1; }
+    .calc-qty { font-size: 16px; font-weight: 700; color: var(--brand); min-width: 48px; text-align: right; }
+    .calc-subtotal { font-size: 13px; color: var(--muted); min-width: 64px; text-align: right; }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0 2px;
+      border-top: 2px solid var(--brand);
+      margin-top: 4px;
+    }
+    .total-label { font-size: 15px; font-weight: 700; }
+    .total-value { font-size: 22px; font-weight: 800; color: var(--brand); }
+
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--bg);
+    }
+    .toggle-label { font-size: 14px; }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #ccc;
+      border-radius: 28px;
+      transition: .2s;
+    }
+    .toggle-slider:before {
+      content: "";
+      position: absolute;
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: .2s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--brand); }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+    .section-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin: -8px 0 10px;
+    }
+
+    /* ── ESTIMATE TAB ── */
+    .estimate-preview {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .est-header { text-align: center; margin-bottom: 16px; }
+    .est-co-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--brand);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .est-co-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .est-divider {
+      border: none;
+      border-top: 2px solid var(--brand);
+      margin: 14px 0;
+    }
+    .est-meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 16px;
+      margin-bottom: 14px;
+      font-size: 12px;
+    }
+    .est-meta-label { color: var(--muted); }
+    .est-meta-value { font-weight: 700; }
+    .est-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--brand);
+      margin-bottom: 6px;
+    }
+    .est-prepared {
+      margin-bottom: 14px;
+      font-size: 13px;
+    }
+    .est-scope {
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      line-height: 1.55;
+    }
+    .est-line-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+    }
+    .est-line-item:last-child { border-bottom: none; }
+    .est-total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0 6px;
+      border-top: 2px solid var(--brand);
+      margin-top: 6px;
+      font-weight: 800;
+      font-size: 15px;
+    }
+    .est-terms {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 14px;
+      line-height: 1.5;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+    .est-sig-block {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .est-sig-line {
+      border-top: 1px solid #333;
+      padding-top: 4px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ── ACTION BUTTONS ── */
+    .action-btn {
+      width: 100%;
+      min-height: 52px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: .2px;
+    }
+    .action-btn.primary { background: var(--brand); color: white; }
+    .action-btn.secondary { background: white; color: var(--brand); border: 2px solid var(--brand); }
+    .action-btn.green { background: var(--accent); color: white; }
+    .action-btn:active { opacity: .85; }
+
+    .pdf-tip {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: -4px;
+      margin-bottom: 10px;
+    }
+
+    /* ── SETTINGS MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 200;
+      justify-content: flex-end;
+      flex-direction: column;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-sheet {
+      background: white;
+      border-radius: 20px 20px 0 0;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 0 0 40px;
+    }
+    .modal-handle {
+      width: 40px;
+      height: 4px;
+      background: #ccc;
+      border-radius: 2px;
+      margin: 14px auto 0;
+    }
+    .modal-header {
+      padding: 16px 20px;
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--brand);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--muted);
+      cursor: pointer;
+      line-height: 1;
+    }
+    .modal-body { padding: 16px 20px; }
+    .settings-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--brand);
+      margin: 16px 0 10px;
+    }
+    .price-field {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .price-field label {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 400;
+      margin: 0;
+    }
+    .price-field input {
+      width: 90px;
+      min-height: 40px;
+      text-align: right;
+      font-weight: 700;
+      padding: 8px 10px;
+    }
+    .save-settings-btn {
+      width: 100%;
+      min-height: 50px;
+      background: var(--brand);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .reset-settings-btn {
+      width: 100%;
+      min-height: 44px;
+      background: none;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #222;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0;
+      transition: all .25s;
+      z-index: 300;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 15px; }
+  </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header class="app-header">
+  <div class="header-left">
+    <h1>FenceFlow</h1>
+    <span class="subtitle">Peace of Mind Maintenance LLC</span>
+  </div>
+  <button class="settings-btn" id="settingsBtn" aria-label="Settings">⚙</button>
+</header>
+
+<!-- ══ TAB 1: JOB INFO ══ -->
+<section class="tab active" id="tab-job">
+
+  <div class="card">
+    <div class="card-title">Customer Info</div>
+
+    <div class="field">
+      <label>Customer / Business Name <span class="req">*</span></label>
+      <input type="text" id="custName" placeholder="e.g. Village ABA" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Job Address <span class="req">*</span></label>
+      <input type="text" id="custAddress" placeholder="Street, City, State Zip">
+    </div>
+    <div class="field">
+      <label>Primary Contact Name</label>
+      <input type="text" id="contactName" placeholder="Who to ask for on site">
+    </div>
+    <div class="field">
+      <label>Phone</label>
+      <input type="tel" id="custPhone" placeholder="(850) 555-0000">
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="custEmail" placeholder="customer@email.com">
+    </div>
+    <div class="field">
+      <label>Referral Source</label>
+      <input type="text" id="referral" placeholder="e.g. Google, Referral, Facebook…">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Job Details</div>
+
+    <div class="field">
+      <label>Property Type <span class="req">*</span></label>
+      <select id="jobType">
+        <option value="residential">Residential</option>
+        <option value="commercial">Commercial (+$500 flat)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Ownership</label>
+      <select id="ownership">
+        <option value="owned">Owned</option>
+        <option value="leased">Leased / Rented</option>
+      </select>
+      <div class="warn-banner" id="leaseWarn">
+        ⚠ Leased property — confirm written landlord approval before proceeding.
+      </div>
+    </div>
+    <div class="field">
+      <label>Fence Type <span class="req">*</span></label>
+      <select id="fenceType">
+        <option value="pine_privacy">6ft Treated Pine Privacy</option>
+        <option value="vinyl" disabled>Vinyl Privacy (coming soon)</option>
+        <option value="chain_link" disabled>Chain Link (coming soon)</option>
+        <option value="aluminum" disabled>Aluminum (coming soon)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Existing Fence Removal?</label>
+      <select id="demoNeeded">
+        <option value="no">No — Fresh Install</option>
+        <option value="yes">Yes — Demo &amp; Remove</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Measurements (Linear Feet)</div>
+    <p class="section-sub">Enter footage for each side. Leave blank if not applicable.</p>
+
+    <div class="lf-grid">
+      <div class="field">
+        <label>Side A</label>
+        <input type="number" id="sideA" placeholder="ft" min="0" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>Side B</label>
+        <input type="number" id="sideB" placeholder="ft" min="0" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>Side C</label>
+        <input type="number" id="sideC" placeholder="ft" min="0" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>Side D</label>
+        <input type="number" id="sideD" placeholder="ft" min="0" inputmode="decimal">
+      </div>
+      <div class="lf-total">
+        <span class="lf-total-label">Total LF</span>
+        <span class="lf-total-value" id="totalLF">0 ft</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Gates</div>
+
+    <div id="gatesList"></div>
+    <button class="add-gate-btn" id="addGateBtn">+ Add Gate</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Site Conditions</div>
+    <p class="section-sub">Check all that apply — these add to the estimate.</p>
+
+    <label class="checklist-item">
+      <input type="checkbox" id="chk_landscaping">
+      <span>Minor landscaping / ground prep (1hr)</span>
+    </label>
+    <label class="checklist-item">
+      <input type="checkbox" id="chk_hauling">
+      <span>Debris haul-off ($50 flat)</span>
+    </label>
+    <label class="checklist-item">
+      <input type="checkbox" id="chk_delivery">
+      <span>Material delivery fee ($50 flat)</span>
+    </label>
+    <label class="checklist-item">
+      <input type="checkbox" id="chk_grading">
+      <span>Grade changes / slope work</span>
+    </label>
+    <label class="checklist-item">
+      <input type="checkbox" id="chk_roots">
+      <span>Root / obstacle digging</span>
+    </label>
+    <label class="checklist-item">
+      <input type="checkbox" id="chk_concrete_cut">
+      <span>Concrete cutting required</span>
+    </label>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Field Notes</div>
+    <div class="field">
+      <textarea id="jobNotes" placeholder="Job site observations, customer requests, access notes, next steps…"></textarea>
+    </div>
+  </div>
+
+  <button class="next-btn" id="goToCalc">Calculate Materials →</button>
+
+</section>
+
+<!-- ══ TAB 2: CALCULATOR ══ -->
+<section class="tab" id="tab-calc">
+
+  <div id="calcContent">
+    <div class="empty-state">
+      <div class="icon">📐</div>
+      <p>Fill in Job Info and tap "Calculate Materials" to see quantities and pricing.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ══ TAB 3: ESTIMATE ══ -->
+<section class="tab" id="tab-estimate">
+
+  <div id="estimateContent">
+    <div class="empty-state">
+      <div class="icon">📋</div>
+      <p>Complete the Job Info tab first, then tap "Calculate Materials" to generate your estimate.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ══ BOTTOM TAB NAV ══ -->
+<nav class="tab-nav">
+  <button class="active" data-tab="job" onclick="switchTab('job')">
+    <span class="icon">📝</span>
+    <span>Job Info</span>
+    <span class="tab-indicator"></span>
+  </button>
+  <button data-tab="calc" onclick="switchTab('calc')">
+    <span class="icon">📐</span>
+    <span>Calculator</span>
+    <span class="tab-indicator"></span>
+  </button>
+  <button data-tab="estimate" onclick="switchTab('estimate')">
+    <span class="icon">📋</span>
+    <span>Estimate</span>
+    <span class="tab-indicator"></span>
+  </button>
+</nav>
+
+<!-- ══ SETTINGS MODAL ══ -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span>Settings</span>
+      <button class="modal-close" id="closeSettings">×</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="settings-section-title">Business Info</div>
+      <div class="field">
+        <label>Company Name</label>
+        <input type="text" id="s_companyName" value="Peace of Mind Maintenance LLC">
+      </div>
+      <div class="field">
+        <label>Owner Name</label>
+        <input type="text" id="s_ownerName" value="Jesse Tegtmeier">
+      </div>
+      <div class="field">
+        <label>Phone</label>
+        <input type="tel" id="s_phone" value="850-776-4175">
+      </div>
+      <div class="field">
+        <label>City, State</label>
+        <input type="text" id="s_location" value="Navarre, FL">
+      </div>
+
+      <div class="settings-section-title">Material Unit Prices</div>
+      <p class="section-sub">These are your default cost prices (before markup).</p>
+
+      <div class="price-field">
+        <label>4x4x10 Post</label>
+        <input type="number" id="p_post" value="18.00" min="0" step="0.01" inputmode="decimal">
+      </div>
+      <div class="price-field">
+        <label>2x4x8 Rail</label>
+        <input type="number" id="p_rail" value="5.50" min="0" step="0.01" inputmode="decimal">
+      </div>
+      <div class="price-field">
+        <label>5/8" Picket</label>
+        <input type="number" id="p_picket" value="3.20" min="0" step="0.01" inputmode="decimal">
+      </div>
+      <div class="price-field">
+        <label>80lb Concrete Bag</label>
+        <input type="number" id="p_concrete" value="7.50" min="0" step="0.01" inputmode="decimal">
+      </div>
+      <div class="price-field">
+        <label>Nail Box (5lb)</label>
+        <input type="number" id="p_nails" value="12.00" min="0" step="0.01" inputmode="decimal">
+      </div>
+
+      <div class="settings-section-title">Gate Prices (Installed)</div>
+      <div class="price-field">
+        <label>Pedestrian Gate</label>
+        <input type="number" id="p_gatePed" value="400.00" min="0" step="1" inputmode="decimal">
+      </div>
+      <div class="price-field">
+        <label>Mower Gate (48"+)</label>
+        <input type="number" id="p_gateMower" value="525.00" min="0" step="1" inputmode="decimal">
+      </div>
+      <div class="price-field">
+        <label>Double Drive Gate</label>
+        <input type="number" id="p_gateDrive" value="800.00" min="0" step="1" inputmode="decimal">
+      </div>
+
+      <div class="settings-section-title">Labor &amp; Add-Ons</div>
+      <div class="price-field">
+        <label>Labor Rate / hr</label>
+        <input type="number" id="p_labor" value="100.00" min="0" step="1" inputmode="decimal">
+      </div>
+      <div class="price-field">
+        <label>Landscaping / hr</label>
+        <input type="number" id="p_landscaping" value="50.00" min="0" step="1" inputmode="decimal">
+      </div>
+      <div class="price-field">
+        <label>Haul-off (flat)</label>
+        <input type="number" id="p_hauling" value="50.00" min="0" step="1" inputmode="decimal">
+      </div>
+      <div class="price-field">
+        <label>Delivery (flat)</label>
+        <input type="number" id="p_delivery" value="50.00" min="0" step="1" inputmode="decimal">
+      </div>
+      <div class="price-field">
+        <label>Commercial Adj.</label>
+        <input type="number" id="p_commercial" value="500.00" min="0" step="1" inputmode="decimal">
+      </div>
+
+      <button class="save-settings-btn" id="saveSettingsBtn">Save Settings</button>
+      <button class="reset-settings-btn" id="resetSettingsBtn">Reset to Defaults</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
