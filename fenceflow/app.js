@@ -561,9 +561,10 @@ function renderEstimate() {
 
   // Build line items
   const lineItems = [];
+  const commAdj    = r ? r.commAdj : c.commAdj;
   const fenceLabel = `6ft Treated Pine Privacy Fence — ${c.lf} LF`;
   const fenceAmt   = r ? (r.matCost + r.markupAmt + r.laborCost) : (c.matSubtotal + c.laborTotal);
-  lineItems.push({ label: fenceLabel, amount: fenceAmt });
+  lineItems.push({ label: fenceLabel, amount: fenceAmt + commAdj });
 
   if (jobData.gates.length > 0) {
     const gateLabel = jobData.gates.length === 1
@@ -576,11 +577,6 @@ function renderEstimate() {
     lineItems.push({ label: 'Site Prep & Add-Ons', amount: r.addonTotal });
   } else if (c.addonTotal > 0) {
     lineItems.push({ label: 'Site Prep & Add-Ons', amount: c.addonTotal });
-  }
-
-  const commAdj = r ? r.commAdj : c.commAdj;
-  if (commAdj > 0) {
-    lineItems.push({ label: 'Commercial Property Adjustment', amount: commAdj });
   }
 
   const grandTotal = r ? r.grandTotal : (fenceAmt + (r?.gateTotal||c.gateTotal) + c.addonTotal + c.commAdj);
