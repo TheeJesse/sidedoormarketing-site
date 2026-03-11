@@ -666,6 +666,9 @@ function renderEstimate() {
     <button class="action-btn secondary" onclick="copySupplierQuoteBFS()">
       📦 Copy Quote (BFS)
     </button>
+    <button class="action-btn secondary" onclick="saveLeadToCRM()">
+      💾 Save Lead to CRM →
+    </button>
   `;
 }
 
@@ -873,6 +876,28 @@ function fallbackCopy(text, successMsg) {
     toast('Copy failed — select text manually');
   }
   document.body.removeChild(ta);
+}
+
+/* ══════════════════════════════════════════
+   SAVE LEAD TO CRM
+══════════════════════════════════════════ */
+function saveLeadToCRM() {
+  if (!jobData || !calcData) return;
+  const r = calcData._render;
+  const params = new URLSearchParams({
+    po:      calcData.po,
+    name:    jobData.custName,
+    contact: jobData.contactName || '',
+    phone:   jobData.custPhone   || '',
+    email:   jobData.custEmail   || '',
+    addr:    jobData.custAddress || '',
+    lf:      calcData.lf,
+    total:   r ? r.grandTotal : (calcData.matSubtotal + calcData.laborTotal),
+    referral:jobData.referral || '',
+    stage:   'estimate_sent',
+    date:    new Date().toISOString().slice(0, 10),
+  });
+  window.open(`/fencecrm/index.html?${params.toString()}`, '_blank');
 }
 
 let toastTimer;
