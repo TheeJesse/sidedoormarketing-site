@@ -11,6 +11,7 @@ const DEFAULTS = {
   ownerName: 'Jesse Tegtmeier',
   phone: '850-776-4175',
   location: 'Navarre, FL',
+  supplierEmail: '',
   prices: {
     post:        18.00,
     rail:         5.50,
@@ -58,10 +59,11 @@ function loadSettings() {
 
 function saveSettings() {
   const s = {
-    companyName: val('s_companyName') || DEFAULTS.companyName,
-    ownerName:   val('s_ownerName')   || DEFAULTS.ownerName,
-    phone:       val('s_phone')       || DEFAULTS.phone,
-    location:    val('s_location')    || DEFAULTS.location,
+    companyName:   val('s_companyName')   || DEFAULTS.companyName,
+    ownerName:     val('s_ownerName')     || DEFAULTS.ownerName,
+    phone:         val('s_phone')         || DEFAULTS.phone,
+    location:      val('s_location')      || DEFAULTS.location,
+    supplierEmail: val('s_supplierEmail') || '',
     prices: {
       post:        num('p_post'),
       rail:        num('p_rail'),
@@ -83,10 +85,11 @@ function saveSettings() {
 }
 
 function applySettingsToForm() {
-  setVal('s_companyName', settings.companyName);
-  setVal('s_ownerName',   settings.ownerName);
-  setVal('s_phone',       settings.phone);
-  setVal('s_location',    settings.location);
+  setVal('s_companyName',   settings.companyName);
+  setVal('s_ownerName',     settings.ownerName);
+  setVal('s_phone',         settings.phone);
+  setVal('s_location',      settings.location);
+  setVal('s_supplierEmail', settings.supplierEmail || '');
   const p = settings.prices;
   setVal('p_post',        p.post);
   setVal('p_rail',        p.rail);
@@ -653,15 +656,32 @@ function renderEstimate() {
     </button>
     <p class="pdf-tip">iPhone: tap Share → Print → press &amp; hold preview → Save to Files</p>
 
-    <button class="action-btn secondary" onclick="copyDeliveryEmail()">
-      📧 Copy Customer Email
-    </button>
-    <button class="action-btn green" onclick="copySupplierQuote()">
-      📦 Copy Supplier Quote
-    </button>
-    <button class="action-btn secondary" onclick="copySupplierQuoteBFS()">
-      📦 Copy Quote (BFS)
-    </button>
+    <div class="action-row">
+      <button class="action-btn green" onclick="emailClientDirect()">
+        📨 Email Client
+      </button>
+      <button class="action-btn secondary" onclick="copyDeliveryEmail()">
+        📋 Copy
+      </button>
+    </div>
+
+    <div class="action-row">
+      <button class="action-btn green" onclick="emailSupplierDirect()">
+        📦 Email Supplier
+      </button>
+      <button class="action-btn secondary" onclick="copySupplierQuote()">
+        📋 Copy
+      </button>
+    </div>
+
+    <div class="action-row">
+      <button class="action-btn green" onclick="emailSupplierDirectBFS()">
+        📦 Email BFS
+      </button>
+      <button class="action-btn secondary" onclick="copySupplierQuoteBFS()">
+        📋 Copy
+      </button>
+    </div>
   `;
 }
 
@@ -728,6 +748,63 @@ ${s.companyName}
 ${s.phone}`;
 
   copyToClipboard(`Subject: ${subject}\n\n${body}`, 'Customer email copied!');
+}
+
+/* ══════════════════════════════════════════
+   EMAIL CLIENT DIRECTLY
+══════════════════════════════════════════ */
+function emailClientDirect() {
+  if (!jobData || !calcData) return;
+  const firstName = jobData.contactName
+    ? jobData.contactName.split(' ')[0]
+    : jobData.custName.split(' ')[0];
+  const days = estimateDays(calcData._render?.laborHrs || calcData.laborHrs);
+  const nextStep = 'your deposit and locate services are completed';
+  const s = settings;
+
+  const to      = jobData.custEmail || '';
+  const subject = `Your Fence Quote — ${s.companyName}`;
+  const body    = `Hi ${firstName},\n\nIt was a pleasure meeting you today.\n\nPlease see the attached fence quote (Estimate #${calcData.po}).\n\nThe build should take ${days}. As soon as ${nextStep} we can get started.\n\nPlease let me know if you have any questions.\n\nSincerely,\n${s.ownerName}\n${s.companyName}\n${s.phone}`;
+
+  if (!to) {
+    toast('No customer email on file — add it in Job Info');
+    return;
+  }
+  window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+/* ══════════════════════════════════════════
+   EMAIL SUPPLIER/MATERIALS BIDDER DIRECTLY
+══════════════════════════════════════════ */
+function emailSupplierDirect() {
+  buildAndEmailSupplier('Hi,');
+}
+
+function emailSupplierDirectBFS() {
+  buildAndEmailSupplier('Hi,\nBuilders FirstSource — Pro Desk');
+}
+
+function buildAndEmailSupplier(greeting) {
+  if (!calcData || !jobData) return;
+  const c = calcData;
+  const r = c._render;
+  const overage = r?.overage ?? true;
+  const mult = overage ? 1.10 : 1.0;
+  const s = settings;
+
+  const posts    = Math.ceil(c.posts    * mult);
+  const rails    = Math.ceil(c.rails    * mult);
+  const pickets  = Math.ceil(c.pickets  * mult);
+  const concrete = Math.ceil(c.concrete * mult);
+  const nail2box = Math.ceil(c.picketNailBoxes * mult);
+  const nail3box = Math.ceil(c.railNailBoxes   * mult);
+
+  const today   = formatDate(new Date());
+  const to      = s.supplierEmail || '';
+  const subject = `Material Quote Request — ${c.lf} LF Fence Build`;
+  const body    = `${greeting}\n\nJesse Tegtmeier here from ${s.companyName}.\nPlease quote the below materials list. Let me know if you have any questions.\n\nPO#: ${c.po}\nDate: ${today}\n\n${c.lf} LF privacy fence build:\n• ${posts} — 4×4×10 Treated Pine Posts\n• ${rails} — 2×4×8 Treated Pine\n• ${pickets} — 5/8" × 5.5" × 6ft Treated Dog Ear Pickets\n• ${concrete} — 80lb Concrete Bags\n• ${nail2box} — 5lb Box 2" Ring Shank Nails\n• ${nail3box} — 5lb Box 3" Ring Shank Nails\n\nThanks,\n${s.ownerName}\n${s.companyName}\n${s.phone}`;
+
+  window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 /* ══════════════════════════════════════════
