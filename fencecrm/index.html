@@ -600,28 +600,72 @@
 <div class="view active" id="view-setup">
   <div class="setup-screen">
     <h2>Welcome to FenceCRM</h2>
-    <p>Connect to Google Sheets to store and sync your leads. You'll only need to do this once.</p>
+    <p>Takes about 3 minutes. You'll paste a script into your Google Sheet and get a URL — that's it.</p>
 
     <div class="setup-steps">
-      <strong>Quick Setup:</strong>
+      <strong>Step 1 — Add the script to your sheet:</strong>
       <ol>
-        <li>Go to <strong>sheets.google.com</strong> and create a new spreadsheet</li>
-        <li>Copy the Sheet ID from the URL:<br><code>…/spreadsheets/d/<strong>SHEET_ID</strong>/edit</code></li>
-        <li>Go to <strong>console.cloud.google.com</strong></li>
-        <li>Enable the <strong>Google Sheets API</strong></li>
-        <li>Create an <strong>API Key</strong> (Credentials → Create Credentials)</li>
-        <li>Restrict the key to <em>Google Sheets API</em></li>
-        <li>Paste both below and tap Test Connection</li>
+        <li>Open your FenceCRM Google Sheet</li>
+        <li>Click <strong>Extensions → Apps Script</strong></li>
+        <li>Delete all existing code in the editor</li>
+        <li>Paste the script from the box below</li>
+        <li>Click <strong>Save</strong> (💾 icon)</li>
+      </ol>
+    </div>
+
+    <div style="background:#1a1a1a;border-radius:8px;padding:14px;margin-bottom:16px;position:relative;">
+      <button onclick="copyScript()" style="position:absolute;top:10px;right:10px;background:rgba(255,255,255,.15);color:white;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">Copy</button>
+      <pre id="scriptCode" style="color:#a8ff78;font-size:11px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;margin:0;font-family:monospace;padding-right:60px;">function doGet(e) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Sheet1');
+    var data = sheet.getDataRange().getValues();
+    return ContentService.createTextOutput(JSON.stringify({values: data}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({error: err.message}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doPost(e) {
+  try {
+    var payload = JSON.parse(e.postData.contents);
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Sheet1');
+    if (payload.action === 'append') {
+      sheet.appendRow(payload.row);
+    } else if (payload.action === 'update') {
+      var data = sheet.getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][0] === payload.po) {
+          sheet.getRange(i + 1, 1, 1, payload.row.length).setValues([payload.row]);
+          break;
+        }
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({success: true}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({error: err.message}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</pre>
+    </div>
+
+    <div class="setup-steps">
+      <strong>Step 2 — Deploy the script:</strong>
+      <ol>
+        <li>Click <strong>Deploy → New deployment</strong></li>
+        <li>Click the ⚙ gear icon → select <strong>Web app</strong></li>
+        <li>Set <em>Execute as</em>: <strong>Me</strong></li>
+        <li>Set <em>Who has access</em>: <strong>Anyone</strong></li>
+        <li>Click <strong>Deploy</strong> → authorize when prompted</li>
+        <li>Copy the <strong>Web app URL</strong> (looks like <code>https://script.google.com/macros/s/…/exec</code>)</li>
       </ol>
     </div>
 
     <div class="field">
-      <label>Google Sheet ID</label>
-      <input type="text" id="setup_sheetId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
-    </div>
-    <div class="field">
-      <label>Google Sheets API Key</label>
-      <input type="text" id="setup_apiKey" placeholder="AIzaSy…">
+      <label>Paste your Web App URL here</label>
+      <input type="text" id="setup_scriptUrl" placeholder="https://script.google.com/macros/s/…/exec">
     </div>
 
     <div class="connection-status" id="connectionStatus"></div>
@@ -771,12 +815,8 @@
 
       <div class="settings-section-title">Google Sheets</div>
       <div class="field">
-        <label>Sheet ID</label>
-        <input type="text" id="s_sheetId" placeholder="Paste Sheet ID">
-      </div>
-      <div class="field">
-        <label>API Key</label>
-        <input type="text" id="s_apiKey" placeholder="Paste API Key">
+        <label>Apps Script Web App URL</label>
+        <input type="text" id="s_scriptUrl" placeholder="https://script.google.com/macros/s/…/exec">
       </div>
       <div class="connection-status" id="settingsConnStatus"></div>
       <button class="btn btn-secondary btn-sm" style="width:100%;margin-bottom:10px;" id="settingsTestBtn">🔌 Test Connection</button>

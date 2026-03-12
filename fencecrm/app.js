@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════
    FenceCRM — app.js
    Peace of Mind Maintenance LLC — Jesse Tegtmeier
+   Backend: Google Apps Script Web App
    ═══════════════════════════════════════════ */
 
 'use strict';
@@ -28,7 +29,7 @@ const STAGE_COLORS = {
   'Review Requested':  'stage-7',
 };
 
-// Sheet column indices (0-based)
+// Sheet column indices (0-based) — must match Apps Script + header row
 const COL = {
   PO: 0, CustomerName: 1, ContactName: 2, Phone: 3, Email: 4,
   Address: 5, LF: 6, FenceType: 7, EstimateTotal: 8, ReferralSource: 9,
@@ -37,15 +38,14 @@ const COL = {
   Draft3Sent: 18, ReviewSent: 19, CreatedAt: 20, UpdatedAt: 21,
 };
 const NUM_COLS = 22;
-const SHEET_RANGE = 'Sheet1';
 
 /* ══════════════════════════════════════════
    STATE
 ══════════════════════════════════════════ */
-let settings = loadSettings();
-let leads    = [];           // array of lead objects
-let currentLead = null;      // lead being viewed in detail
-let offlineQueue = [];        // rows to retry on next load
+let settings    = loadSettings();
+let leads       = [];
+let currentLead = null;
+let offlineQueue = [];
 let currentView  = null;
 
 /* ══════════════════════════════════════════
@@ -58,11 +58,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const urlLead = parseURLParams();
 
-  if (!settings.sheetId || !settings.apiKey) {
+  if (!settings.scriptUrl) {
     showView('setup');
     if (urlLead) prefillNewLead(urlLead);
   } else {
-    loadLeadsFromSheets().then(() => {
+    loadLeads().then(() => {
       if (urlLead) {
         prefillNewLead(urlLead);
         showView('new-lead');
@@ -87,8 +87,7 @@ function loadSettings() {
     companyName: 'Peace of Mind Maintenance LLC',
     phone:       '850-776-4175',
     reviewLink:  '',
-    sheetId:     '',
-    apiKey:      '',
+    scriptUrl:   '',
   };
 }
 
@@ -101,9 +100,7 @@ function applySettingsToForms() {
   setVal('s_companyName', settings.companyName);
   setVal('s_phone',       settings.phone);
   setVal('s_reviewLink',  settings.reviewLink);
-  setVal('s_sheetId',     settings.sheetId);
-  setVal('s_apiKey',      settings.apiKey);
-  // Header subtitle
+  setVal('s_scriptUrl',   settings.scriptUrl);
   el('headerSubtitle').textContent = settings.companyName || 'Peace of Mind Maintenance LLC';
 }
 
@@ -115,12 +112,10 @@ function showView(viewId, skipNavHighlight) {
   el(`view-${viewId}`).classList.add('active');
   currentView = viewId;
 
-  // Bottom nav highlight (only for main nav views)
   document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
   const navBtn = el(`nav-${viewId}`);
   if (navBtn && !skipNavHighlight) navBtn.classList.add('active');
 
-  // Show/hide bottom nav for detail view
   document.querySelector('.bottom-nav').style.display =
     (viewId === 'setup' || viewId === 'detail') ? 'none' : 'flex';
 
@@ -131,7 +126,6 @@ function showView(viewId, skipNavHighlight) {
    EVENT BINDING
 ══════════════════════════════════════════ */
 function bindEvents() {
-  // Settings modal
   el('settingsBtn').addEventListener('click', () => {
     applySettingsToForms();
     el('settingsModal').classList.add('open');
@@ -147,18 +141,14 @@ function bindEvents() {
     showView('setup');
   });
 
-  // Setup screen
   el('testConnectionBtn').addEventListener('click', () => testConnection('connectionStatus'));
   el('setupSaveBtn').addEventListener('click', onSetupSave);
 
-  // New lead
   el('saveNewLeadBtn').addEventListener('click', onSaveNewLead);
   el('cancelNewLeadBtn').addEventListener('click', () => showView('pipeline'));
 
-  // Detail back
   el('detailBack').addEventListener('click', () => showView('pipeline'));
 
-  // Search
   el('searchInput').addEventListener('input', onSearch);
 }
 
@@ -167,8 +157,7 @@ function onSaveSettings() {
   settings.companyName = val('s_companyName') || settings.companyName;
   settings.phone       = val('s_phone')       || settings.phone;
   settings.reviewLink  = val('s_reviewLink');
-  settings.sheetId     = val('s_sheetId').trim();
-  settings.apiKey      = val('s_apiKey').trim();
+  settings.scriptUrl   = val('s_scriptUrl').trim();
   saveSettings();
   el('settingsModal').classList.remove('open');
   applySettingsToForms();
@@ -176,17 +165,15 @@ function onSaveSettings() {
 }
 
 function onSetupSave() {
-  const sheetId = val('setup_sheetId').trim();
-  const apiKey  = val('setup_apiKey').trim();
-  if (!sheetId || !apiKey) {
-    toast('Enter both Sheet ID and API Key');
+  const scriptUrl = val('setup_scriptUrl').trim();
+  if (!scriptUrl) {
+    toast('Paste your Apps Script Web App URL first');
     return;
   }
-  settings.sheetId = sheetId;
-  settings.apiKey  = apiKey;
+  settings.scriptUrl = scriptUrl;
   saveSettings();
   toast('Connecting…');
-  loadLeadsFromSheets().then(() => {
+  loadLeads().then(() => {
     showView('pipeline');
     retryOfflineQueue();
   });
@@ -240,116 +227,104 @@ function prefillNewLead(data) {
 }
 
 /* ══════════════════════════════════════════
-   GOOGLE SHEETS API
+   APPS SCRIPT API
+  All reads and writes go through the deployed
+  Google Apps Script Web App URL.
 ══════════════════════════════════════════ */
-function sheetsBase() {
-  return `https://sheets.googleapis.com/v4/spreadsheets/${settings.sheetId}`;
-}
 
-async function sheetsGet(range) {
-  const url = `${sheetsBase()}/values/${encodeURIComponent(range)}?key=${settings.apiKey}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Sheets GET ${res.status}: ${await res.text()}`);
+async function scriptGet() {
+  const url = settings.scriptUrl;
+  if (!url) throw new Error('No script URL configured');
+  const res = await fetch(`${url}?action=get`, { redirect: 'follow' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
 
-async function sheetsAppend(values) {
-  const url = `${sheetsBase()}/values/${SHEET_RANGE}!A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS&key=${settings.apiKey}`;
+async function scriptPost(payload) {
+  const url = settings.scriptUrl;
+  if (!url) throw new Error('No script URL configured');
+  // Use text/plain to avoid CORS preflight — Apps Script handles this
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ values }),
+    redirect: 'follow',
+    body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error(`Sheets APPEND ${res.status}: ${await res.text()}`);
-  return res.json();
-}
-
-async function sheetsUpdate(range, values) {
-  const url = `${sheetsBase()}/values/${encodeURIComponent(range)}?valueInputOption=RAW&key=${settings.apiKey}`;
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ values }),
-  });
-  if (!res.ok) throw new Error(`Sheets PUT ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
 
 async function testConnection(statusElId) {
-  const sid = statusElId === 'connectionStatus'
-    ? val('setup_sheetId').trim()  : val('s_sheetId').trim();
-  const key = statusElId === 'connectionStatus'
-    ? val('setup_apiKey').trim()   : val('s_apiKey').trim();
+  const testUrl = statusElId === 'connectionStatus'
+    ? val('setup_scriptUrl').trim()
+    : val('s_scriptUrl').trim();
 
   const statusEl = el(statusElId);
   statusEl.className = 'connection-status';
   statusEl.textContent = 'Testing…';
   statusEl.style.display = 'block';
 
-  if (!sid || !key) {
+  if (!testUrl) {
     statusEl.className = 'connection-status err';
-    statusEl.textContent = '❌ Enter both Sheet ID and API Key first.';
+    statusEl.textContent = '❌ Paste your Apps Script Web App URL first.';
     return;
   }
 
   try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sid}/values/Sheet1!A1:V1?key=${key}`;
-    const res = await fetch(url);
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `HTTP ${res.status}`);
-    }
+    const res = await fetch(`${testUrl}?action=get`, { redirect: 'follow' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
     statusEl.className = 'connection-status ok';
-    statusEl.textContent = '✅ Connected! Google Sheets is ready.';
+    statusEl.textContent = `✅ Connected! Found ${Math.max(0, (data.values?.length || 1) - 1)} leads in sheet.`;
   } catch(e) {
     statusEl.className = 'connection-status err';
-    statusEl.textContent = `❌ ${e.message}`;
+    statusEl.textContent = `❌ ${e.message}. Make sure the script is deployed as "Anyone" can access.`;
   }
 }
 
 /* ══════════════════════════════════════════
    LOAD LEADS
 ══════════════════════════════════════════ */
-async function loadLeadsFromSheets() {
-  if (!settings.sheetId || !settings.apiKey) return;
+async function loadLeads() {
+  if (!settings.scriptUrl) return;
   try {
-    const data = await sheetsGet(`${SHEET_RANGE}!A1:V`);
+    const data = await scriptGet();
     const rows = data.values || [];
+    // Skip header row (row 0) and any rows without a PO
     leads = rows
-      .filter((r, i) => i > 0 && r[COL.PO])  // skip header row
+      .filter((r, i) => i > 0 && r[COL.PO])
       .map(rowToLead);
     renderPipeline();
   } catch(e) {
     console.error('Load leads error:', e);
-    toast('Could not load from Sheets — check connection');
+    toast('Could not load leads — check your Script URL in Settings');
   }
 }
 
 function rowToLead(row) {
   return {
-    po:              row[COL.PO]             || '',
-    custName:        row[COL.CustomerName]   || '',
-    contactName:     row[COL.ContactName]    || '',
-    phone:           row[COL.Phone]          || '',
-    email:           row[COL.Email]          || '',
-    address:         row[COL.Address]        || '',
-    lf:              row[COL.LF]             || '',
-    fenceType:       row[COL.FenceType]      || '',
-    total:           row[COL.EstimateTotal]  || '',
-    referral:        row[COL.ReferralSource] || '',
-    stage:           row[COL.Stage]          || 'Lead',
-    sentDate:        row[COL.EstimateSentDate]  || '',
-    depositDate:     row[COL.DepositPaidDate]   || '',
-    jobDate:         row[COL.JobDate]            || '',
-    completionDate:  row[COL.CompletionDate]     || '',
-    notes:           row[COL.Notes]              || '',
-    draft1Sent:      row[COL.Draft1Sent]  === 'TRUE',
-    draft2Sent:      row[COL.Draft2Sent]  === 'TRUE',
-    draft3Sent:      row[COL.Draft3Sent]  === 'TRUE',
-    reviewSent:      row[COL.ReviewSent]  === 'TRUE',
-    createdAt:       row[COL.CreatedAt]   || '',
-    updatedAt:       row[COL.UpdatedAt]   || '',
-    _rowIndex:       null,  // filled after we know the row
+    po:             row[COL.PO]             || '',
+    custName:       row[COL.CustomerName]   || '',
+    contactName:    row[COL.ContactName]    || '',
+    phone:          row[COL.Phone]          || '',
+    email:          row[COL.Email]          || '',
+    address:        row[COL.Address]        || '',
+    lf:             row[COL.LF]             || '',
+    fenceType:      row[COL.FenceType]      || '',
+    total:          row[COL.EstimateTotal]  || '',
+    referral:       row[COL.ReferralSource] || '',
+    stage:          row[COL.Stage]          || 'Lead',
+    sentDate:       row[COL.EstimateSentDate]  || '',
+    depositDate:    row[COL.DepositPaidDate]   || '',
+    jobDate:        row[COL.JobDate]            || '',
+    completionDate: row[COL.CompletionDate]     || '',
+    notes:          row[COL.Notes]              || '',
+    draft1Sent:     row[COL.Draft1Sent]  === 'TRUE' || row[COL.Draft1Sent] === true,
+    draft2Sent:     row[COL.Draft2Sent]  === 'TRUE' || row[COL.Draft2Sent] === true,
+    draft3Sent:     row[COL.Draft3Sent]  === 'TRUE' || row[COL.Draft3Sent] === true,
+    reviewSent:     row[COL.ReviewSent]  === 'TRUE' || row[COL.ReviewSent] === true,
+    createdAt:      row[COL.CreatedAt]   || '',
+    updatedAt:      row[COL.UpdatedAt]   || '',
   };
 }
 
@@ -381,81 +356,49 @@ function leadToRow(lead) {
 }
 
 /* ══════════════════════════════════════════
-   ENSURE HEADER ROW
-══════════════════════════════════════════ */
-async function ensureHeaderRow() {
-  try {
-    const data = await sheetsGet(`${SHEET_RANGE}!A1:V1`);
-    if (!data.values || !data.values[0] || data.values[0][0] !== 'PO') {
-      await sheetsUpdate(`${SHEET_RANGE}!A1:V1`, [[
-        'PO','CustomerName','ContactName','Phone','Email','Address',
-        'LF','FenceType','EstimateTotal','ReferralSource','Stage',
-        'EstimateSentDate','DepositPaidDate','JobDate','CompletionDate',
-        'Notes','Draft1Sent','Draft2Sent','Draft3Sent','ReviewSent',
-        'CreatedAt','UpdatedAt',
-      ]]);
-    }
-  } catch(e) {
-    console.warn('Could not ensure header:', e);
-  }
-}
-
-/* ══════════════════════════════════════════
    SAVE NEW LEAD
 ══════════════════════════════════════════ */
 async function onSaveNewLead() {
   const custName = val('nl_custName').trim();
-  if (!custName) {
-    toast('Customer name is required');
-    return;
-  }
+  if (!custName) { toast('Customer name is required'); return; }
+
   let po = val('nl_po').trim();
   if (!po) po = generatePO(custName);
 
-  // Check duplicate PO
   if (leads.find(l => l.po === po)) {
     toast(`PO ${po} already exists — opening existing lead`);
-    const existing = leads.find(l => l.po === po);
-    openDetail(existing);
+    openDetail(leads.find(l => l.po === po));
     return;
   }
 
   const now = nowISO();
   const lead = {
-    po,
-    custName,
-    contactName:   val('nl_contactName').trim(),
-    phone:         val('nl_phone').trim(),
-    email:         val('nl_email').trim(),
-    address:       val('nl_address').trim(),
-    lf:            val('nl_lf').trim(),
-    fenceType:     val('nl_fenceType').trim() || '6ft Treated Pine Privacy',
-    total:         val('nl_total').trim(),
-    referral:      val('nl_referral').trim(),
-    stage:         val('nl_stage') || 'Lead',
-    sentDate:      val('nl_sentDate'),
-    depositDate:   '',
-    jobDate:       '',
-    completionDate:'',
-    notes:         val('nl_notes').trim()
+    po, custName,
+    contactName:    val('nl_contactName').trim(),
+    phone:          val('nl_phone').trim(),
+    email:          val('nl_email').trim(),
+    address:        val('nl_address').trim(),
+    lf:             val('nl_lf').trim(),
+    fenceType:      val('nl_fenceType').trim() || '6ft Treated Pine Privacy',
+    total:          val('nl_total').trim(),
+    referral:       val('nl_referral').trim(),
+    stage:          val('nl_stage') || 'Lead',
+    sentDate:       val('nl_sentDate'),
+    depositDate:    '', jobDate: '', completionDate: '',
+    notes:          val('nl_notes').trim()
       ? `[${now}]\n${val('nl_notes').trim()}` : '',
-    draft1Sent: false,
-    draft2Sent: false,
-    draft3Sent: false,
-    reviewSent: false,
-    createdAt:  now,
-    updatedAt:  now,
+    draft1Sent: false, draft2Sent: false, draft3Sent: false, reviewSent: false,
+    createdAt: now, updatedAt: now,
   };
 
   leads.unshift(lead);
   renderPipeline();
 
   try {
-    await ensureHeaderRow();
-    await sheetsAppend([leadToRow(lead)]);
-    toast(`Lead saved — ${lead.po}`);
+    await scriptPost({ action: 'append', row: leadToRow(lead) });
+    toast(`✅ Lead saved — ${lead.po}`);
   } catch(e) {
-    console.error('Save lead error:', e);
+    console.error('Save error:', e);
     toast('Saved locally — will sync when online');
     addToOfflineQueue({ action: 'append', lead });
   }
@@ -473,22 +416,19 @@ function clearNewLeadForm() {
 }
 
 /* ══════════════════════════════════════════
-   UPDATE LEAD IN SHEETS
+   UPDATE LEAD
 ══════════════════════════════════════════ */
 async function updateLead(lead) {
   lead.updatedAt = nowISO();
-  // Find row index in sheet (row 1 = header, row 2 = first data row)
   const idx = leads.findIndex(l => l.po === lead.po);
-  if (idx === -1) return;
-  const sheetRow = idx + 2;  // 1-indexed + 1 for header
-  const range = `${SHEET_RANGE}!A${sheetRow}:V${sheetRow}`;
+  if (idx !== -1) leads[idx] = lead;
 
   try {
-    await sheetsUpdate(range, [leadToRow(lead)]);
+    await scriptPost({ action: 'update', po: lead.po, row: leadToRow(lead) });
   } catch(e) {
     console.error('Update error:', e);
     toast('Update saved locally — will sync when online');
-    addToOfflineQueue({ action: 'update', lead, range });
+    addToOfflineQueue({ action: 'update', po: lead.po, lead });
   }
 }
 
@@ -496,13 +436,12 @@ async function updateLead(lead) {
    PIPELINE RENDER
 ══════════════════════════════════════════ */
 function renderPipeline() {
-  const board  = el('pipelineBoard');
+  const board   = el('pipelineBoard');
   const summary = el('pipelineSummary');
 
-  // Summary chips
   const totalValue = leads.reduce((s, l) => s + (parseFloat(l.total) || 0), 0);
   summary.innerHTML = `
-    <div class="summary-chip">Total Leads: <span>${leads.length}</span></div>
+    <div class="summary-chip">Total: <span>${leads.length} leads</span></div>
     <div class="summary-chip">Pipeline: <span>${money(totalValue)}</span></div>
     ${STAGES.map(s => {
       const count = leads.filter(l => l.stage === s).length;
@@ -510,13 +449,12 @@ function renderPipeline() {
     }).join('')}
   `;
 
-  board.innerHTML = STAGES.map((stage, i) => {
+  board.innerHTML = STAGES.map(stage => {
     const stageLeads = leads.filter(l => l.stage === stage);
     const colorClass = STAGE_COLORS[stage] || 'stage-2';
     const cardsHTML  = stageLeads.length
       ? stageLeads.map(l => leadCardHTML(l)).join('')
       : '<div class="stage-empty">No leads</div>';
-
     return `
       <div class="pipeline-stage">
         <div class="stage-header ${colorClass}">
@@ -528,7 +466,6 @@ function renderPipeline() {
     `;
   }).join('');
 
-  // Bind card taps
   board.querySelectorAll('.lead-card').forEach(card => {
     card.addEventListener('click', () => {
       const lead = leads.find(l => l.po === card.dataset.po);
@@ -538,18 +475,15 @@ function renderPipeline() {
 }
 
 function leadCardHTML(lead) {
-  const daysInStage = daysSince(lead.updatedAt || lead.createdAt);
+  const daysInStage  = daysSince(lead.updatedAt || lead.createdAt);
   const followUpInfo = getFollowUpInfo(lead);
   let badgeHTML = '';
   if (followUpInfo) {
-    const overdue = followUpInfo.overdue;
-    const todayDue = followUpInfo.today;
-    const cls = overdue ? 'overdue' : todayDue ? 'today' : '';
+    const cls = followUpInfo.overdue ? 'overdue' : followUpInfo.today ? 'today' : '';
     badgeHTML = `<span class="due-badge ${cls}">${followUpInfo.label}</span>`;
   }
-
   return `
-    <div class="lead-card" data-po="${lead.po}">
+    <div class="lead-card" data-po="${esc(lead.po)}">
       <div class="lead-card-top">
         <span class="lead-name">${esc(lead.custName)}</span>
         <span class="lead-total">${lead.total ? money(parseFloat(lead.total)) : '—'}</span>
@@ -566,20 +500,13 @@ function leadCardHTML(lead) {
 function getFollowUpInfo(lead) {
   if (lead.stage !== 'Estimate Sent' && lead.stage !== 'Follow-Up') return null;
   if (!lead.sentDate) return null;
-
-  const sent = new Date(lead.sentDate);
-  const now  = new Date();
-  const days = Math.floor((now - sent) / 86400000);
-
-  if (!lead.draft1Sent && days >= 2) {
+  const days = daysSince(lead.sentDate);
+  if (!lead.draft1Sent && days >= 2)
     return { label: `Day ${days} — Send #1`, overdue: days > 4, today: days === 2 };
-  }
-  if (!lead.draft2Sent && days >= 7) {
+  if (!lead.draft2Sent && days >= 7)
     return { label: `Day ${days} — Send #2`, overdue: days > 9, today: days === 7 };
-  }
-  if (!lead.draft3Sent && days >= 13) {
+  if (!lead.draft3Sent && days >= 13)
     return { label: `Day ${days} — Send #3`, overdue: days > 14, today: days === 13 };
-  }
   return null;
 }
 
@@ -594,15 +521,12 @@ function openDetail(lead) {
 
 function renderDetail(lead) {
   const sentDays = lead.sentDate ? daysSince(lead.sentDate) : null;
-  const stagePillStyle = getStagePillStyle(lead.stage);
 
   el('detailContent').innerHTML = `
-    <!-- Stage pill -->
     <div style="margin-top:14px;">
-      <span class="stage-pill" style="${stagePillStyle}">${esc(lead.stage)}</span>
+      <span class="stage-pill" style="${getStagePillStyle(lead.stage)}">${esc(lead.stage)}</span>
     </div>
 
-    <!-- Contact Info -->
     <div class="card">
       <div class="card-title">Contact Info</div>
       <div class="field"><label>Customer / Business Name</label>
@@ -610,14 +534,17 @@ function renderDetail(lead) {
       <div class="field"><label>Contact Name</label>
         <input type="text" id="d_contactName" value="${esc(lead.contactName)}"></div>
       <div class="field"><label>Phone</label>
-        <input type="tel" id="d_phone" value="${esc(lead.phone)}"></div>
+        <input type="tel" id="d_phone" value="${esc(lead.phone)}">
+        ${lead.phone ? `<a href="tel:${esc(lead.phone)}" style="display:block;margin-top:6px;font-size:13px;color:var(--brand);">📞 Call ${esc(lead.phone)}</a>` : ''}
+      </div>
       <div class="field"><label>Email</label>
-        <input type="email" id="d_email" value="${esc(lead.email)}"></div>
+        <input type="email" id="d_email" value="${esc(lead.email)}">
+        ${lead.email ? `<a href="mailto:${esc(lead.email)}" style="display:block;margin-top:6px;font-size:13px;color:var(--brand);">✉️ Email ${esc(lead.email)}</a>` : ''}
+      </div>
       <div class="field"><label>Property Address</label>
         <input type="text" id="d_address" value="${esc(lead.address)}"></div>
     </div>
 
-    <!-- Job Info -->
     <div class="card">
       <div class="card-title">Job Info</div>
       <div class="field"><label>PO Number</label>
@@ -632,7 +559,6 @@ function renderDetail(lead) {
         <input type="text" id="d_referral" value="${esc(lead.referral)}"></div>
     </div>
 
-    <!-- Stage -->
     <div class="card">
       <div class="card-title">Pipeline Stage</div>
       <div class="stage-selector" id="stageSelectorGrid">
@@ -643,7 +569,6 @@ function renderDetail(lead) {
       </div>
     </div>
 
-    <!-- Dates -->
     <div class="card">
       <div class="card-title">Key Dates</div>
       <div class="date-grid">
@@ -658,7 +583,6 @@ function renderDetail(lead) {
       </div>
     </div>
 
-    <!-- Notes -->
     <div class="card">
       <div class="card-title">Notes</div>
       ${renderNotesHistory(lead.notes)}
@@ -668,7 +592,6 @@ function renderDetail(lead) {
       </div>
     </div>
 
-    <!-- Follow-Up Drafts -->
     <div class="card">
       <div class="card-title">Follow-Up Drafts</div>
       ${sentDays !== null ? `<p class="section-sub">${sentDays} days since estimate sent</p>` : ''}
@@ -683,7 +606,6 @@ function renderDetail(lead) {
       ${renderReviewDraft(lead)}
     </div>` : ''}
 
-    <!-- Save -->
     <button class="btn btn-primary" onclick="saveDetail()">💾 Save Changes</button>
     <button class="btn btn-ghost" onclick="showView('pipeline')">Cancel</button>
   `;
@@ -691,14 +613,13 @@ function renderDetail(lead) {
 
 function renderNotesHistory(notesStr) {
   if (!notesStr) return '<p style="font-size:13px;color:var(--muted);">No notes yet.</p>';
-  const entries = notesStr.split(/(?=\[\d{4}-\d{2}-\d{2})/).filter(Boolean);
-  if (entries.length === 0) return `<div class="notes-entry">${esc(notesStr)}</div>`;
+  const entries = notesStr.split(/(?=\[\d{1,2}\/\d{1,2}\/\d{4}|\[\d{4}-\d{2}-\d{2})/).filter(Boolean);
   return entries.map(entry => {
     const tsMatch = entry.match(/^\[([^\]]+)\]\n?/);
     if (tsMatch) {
       const ts   = tsMatch[1];
       const body = entry.slice(tsMatch[0].length).trim();
-      return `<div class="notes-entry"><div class="notes-ts">${ts}</div>${esc(body)}</div>`;
+      return `<div class="notes-entry"><div class="notes-ts">${esc(ts)}</div>${esc(body)}</div>`;
     }
     return `<div class="notes-entry">${esc(entry)}</div>`;
   }).join('');
@@ -730,25 +651,23 @@ function saveDetail() {
   if (!currentLead) return;
   const lead = currentLead;
 
-  lead.custName    = val('d_custName').trim()    || lead.custName;
-  lead.contactName = val('d_contactName').trim();
-  lead.phone       = val('d_phone').trim();
-  lead.email       = val('d_email').trim();
-  lead.address     = val('d_address').trim();
-  lead.total       = val('d_total').trim();
-  lead.lf          = val('d_lf').trim();
-  lead.fenceType   = val('d_fenceType').trim();
-  lead.referral    = val('d_referral').trim();
-  lead.sentDate    = val('d_sentDate');
-  lead.depositDate = val('d_depositDate');
-  lead.jobDate     = val('d_jobDate');
+  lead.custName       = val('d_custName').trim()    || lead.custName;
+  lead.contactName    = val('d_contactName').trim();
+  lead.phone          = val('d_phone').trim();
+  lead.email          = val('d_email').trim();
+  lead.address        = val('d_address').trim();
+  lead.total          = val('d_total').trim();
+  lead.lf             = val('d_lf').trim();
+  lead.fenceType      = val('d_fenceType').trim();
+  lead.referral       = val('d_referral').trim();
+  lead.sentDate       = val('d_sentDate');
+  lead.depositDate    = val('d_depositDate');
+  lead.jobDate        = val('d_jobDate');
   lead.completionDate = val('d_completionDate');
 
-  // Stage
   const activeStageEl = document.querySelector('.stage-opt.active');
   if (activeStageEl) lead.stage = activeStageEl.dataset.stage;
 
-  // Append new note
   const newNote = val('d_newNote').trim();
   if (newNote) {
     const ts = nowISO();
@@ -757,33 +676,27 @@ function saveDetail() {
       : `[${ts}]\n${newNote}`;
   }
 
-  // Update local array
-  const idx = leads.findIndex(l => l.po === lead.po);
-  if (idx !== -1) leads[idx] = lead;
-
   updateLead(lead).then(() => {
-    toast('Lead updated');
+    toast('✅ Lead updated');
     renderPipeline();
     renderDetail(lead);
   });
 }
 
 /* ══════════════════════════════════════════
-   FOLLOW-UP DRAFT RENDERING
+   FOLLOW-UP DRAFTS
 ══════════════════════════════════════════ */
 function renderDraft(lead, num) {
-  const sentProp = `draft${num}Sent`;
-  const isSent   = lead[sentProp];
-  const config   = getDraftConfig(lead, num);
-
+  const isSent = lead[`draft${num}Sent`];
+  const config = getDraftConfig(lead, num);
   return `
-    <div class="draft-card${isSent ? ' sent' : ''}" id="draft-card-${num}">
+    <div class="draft-card${isSent ? ' sent' : ''}">
       <div class="draft-header">
         <span class="draft-label">Draft ${num} — ${config.dayLabel}</span>
         ${isSent ? '<span class="draft-sent-badge">✓ Sent</span>' : ''}
       </div>
       <div class="draft-subject">Subject: ${esc(config.subject)}</div>
-      <div class="draft-preview">${esc(config.bodyPreview)}</div>
+      <div class="draft-preview">${esc(config.body)}</div>
       <div class="draft-actions">
         <button class="btn btn-secondary btn-sm" onclick="sendDraft(${num})">📨 Send</button>
         ${!isSent
@@ -796,50 +709,44 @@ function renderDraft(lead, num) {
 
 function getDraftConfig(lead, num) {
   const firstName = firstNameOf(lead);
-  const s = settings;
+  const s         = settings;
   const sentDate  = lead.sentDate ? new Date(lead.sentDate) : new Date();
   const expiry    = new Date(sentDate.getTime() + 14 * 86400000);
   const expiryStr = expiry.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
   const totalStr  = lead.total ? money(parseFloat(lead.total)) : '[amount]';
+  const sig       = `${s.ownerName} | ${s.companyName} | ${s.phone}`;
 
-  if (num === 1) {
-    return {
-      dayLabel: 'Day 2 (48hr check-in)',
-      subject:  `Quick check-in — ${lead.custName} fence quote`,
-      bodyPreview: `Hi ${firstName}, just wanted to make sure you received the estimate for your fence project (PO# ${lead.po}). Happy to answer any questions — let me know! ${s.ownerName} | ${s.companyName} | ${s.phone}`,
-    };
-  }
-  if (num === 2) {
-    return {
-      dayLabel: 'Day 7',
-      subject:  `Your fence quote — still good through ${expiryStr}`,
-      bodyPreview: `Hi ${firstName}, wanted to touch base on your fence estimate (PO# ${lead.po}, ${totalStr}). The quote is valid through ${expiryStr}. Ready to get started when you are. ${s.ownerName} | ${s.companyName} | ${s.phone}`,
-    };
-  }
+  if (num === 1) return {
+    dayLabel: 'Day 2 (48hr check-in)',
+    subject:  `Quick check-in — ${lead.custName} fence quote`,
+    body: `Hi ${firstName},\n\nJust wanted to make sure you received the estimate for your fence project (PO# ${lead.po}). Happy to answer any questions — let me know!\n\n${sig}`,
+  };
+  if (num === 2) return {
+    dayLabel: 'Day 7',
+    subject:  `Your fence quote — still good through ${expiryStr}`,
+    body: `Hi ${firstName},\n\nWanted to touch base on your fence estimate (PO# ${lead.po}, ${totalStr}). The quote is valid through ${expiryStr}. Ready to get started when you are.\n\n${sig}`,
+  };
   return {
     dayLabel: 'Day 13 (final nudge)',
     subject:  `Last chance — fence quote expires tomorrow`,
-    bodyPreview: `Hi ${firstName}, your fence estimate (PO# ${lead.po}) expires tomorrow. If you'd like to move forward, just reply and we'll get you on the schedule. ${s.ownerName} | ${s.companyName} | ${s.phone}`,
+    body: `Hi ${firstName},\n\nYour fence estimate (PO# ${lead.po}) expires tomorrow. If you'd like to move forward, just reply and we'll get you on the schedule.\n\n${sig}`,
   };
 }
 
 function sendDraft(num) {
   if (!currentLead) return;
-  const lead   = currentLead;
-  const config = getDraftConfig(lead, num);
-  const body   = config.bodyPreview;
-
-  const mailto = `mailto:${encodeURIComponent(lead.email)}`
+  const config = getDraftConfig(currentLead, num);
+  window.open(
+    `mailto:${encodeURIComponent(currentLead.email)}`
     + `?subject=${encodeURIComponent(config.subject)}`
-    + `&body=${encodeURIComponent(body)}`;
-  window.open(mailto, '_blank');
+    + `&body=${encodeURIComponent(config.body)}`,
+    '_blank'
+  );
 }
 
 function markDraftSent(num) {
   if (!currentLead) return;
   currentLead[`draft${num}Sent`] = true;
-  const idx = leads.findIndex(l => l.po === currentLead.po);
-  if (idx !== -1) leads[idx] = currentLead;
   updateLead(currentLead).then(() => {
     toast(`Draft ${num} marked as sent`);
     renderDetail(currentLead);
@@ -850,23 +757,18 @@ function markDraftSent(num) {
 function markDraftUnsent(num) {
   if (!currentLead) return;
   currentLead[`draft${num}Sent`] = false;
-  const idx = leads.findIndex(l => l.po === currentLead.po);
-  if (idx !== -1) leads[idx] = currentLead;
-  updateLead(currentLead).then(() => {
-    renderDetail(currentLead);
-  });
+  updateLead(currentLead).then(() => renderDetail(currentLead));
 }
 
 /* ══════════════════════════════════════════
    REVIEW DRAFT
 ══════════════════════════════════════════ */
 function renderReviewDraft(lead) {
-  const s = settings;
+  const s         = settings;
   const firstName = firstNameOf(lead);
-  const reviewLink = s.reviewLink || '[Google Review Link]';
-
-  const subject = `Thanks for choosing ${s.companyName}!`;
-  const body    = `Hi ${firstName}, it was a pleasure working on your fence project. If you're happy with the work, would you mind leaving us a quick review? It means a lot.\n${reviewLink}\n— ${s.ownerName}`;
+  const link      = s.reviewLink || '[Google Review Link]';
+  const subject   = `Thanks for choosing ${s.companyName}!`;
+  const body      = `Hi ${firstName},\n\nIt was a pleasure working on your fence project. If you're happy with the work, would you mind leaving us a quick review? It means a lot.\n\n${link}\n\n— ${s.ownerName}`;
 
   return `
     <div class="draft-card${lead.reviewSent ? ' sent' : ''}">
@@ -888,16 +790,12 @@ function renderReviewDraft(lead) {
 
 function sendReviewDraft() {
   if (!currentLead) return;
-  const lead = currentLead;
-  const s    = settings;
-  const firstName = firstNameOf(lead);
-  const reviewLink = s.reviewLink || '[Google Review Link]';
-  const subject = `Thanks for choosing ${s.companyName}!`;
-  const body    = `Hi ${firstName}, it was a pleasure working on your fence project. If you're happy with the work, would you mind leaving us a quick review? It means a lot.\n${reviewLink}\n— ${s.ownerName}`;
-  const mailto = `mailto:${encodeURIComponent(lead.email)}`
-    + `?subject=${encodeURIComponent(subject)}`
-    + `&body=${encodeURIComponent(body)}`;
-  window.open(mailto, '_blank');
+  const s         = settings;
+  const firstName = firstNameOf(currentLead);
+  const link      = s.reviewLink || '[Google Review Link]';
+  const subject   = `Thanks for choosing ${s.companyName}!`;
+  const body      = `Hi ${firstName},\n\nIt was a pleasure working on your fence project. If you're happy with the work, would you mind leaving us a quick review? It means a lot.\n\n${link}\n\n— ${s.ownerName}`;
+  window.open(`mailto:${encodeURIComponent(currentLead.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
 }
 
 function markReviewSent() {
@@ -905,12 +803,9 @@ function markReviewSent() {
   currentLead.reviewSent = true;
   if (currentLead.stage !== 'Review Requested') {
     currentLead.stage = 'Review Requested';
-    document.querySelectorAll('.stage-opt').forEach(o => {
-      o.classList.toggle('active', o.dataset.stage === 'Review Requested');
-    });
+    document.querySelectorAll('.stage-opt').forEach(o =>
+      o.classList.toggle('active', o.dataset.stage === 'Review Requested'));
   }
-  const idx = leads.findIndex(l => l.po === currentLead.po);
-  if (idx !== -1) leads[idx] = currentLead;
   updateLead(currentLead).then(() => {
     toast('Review request marked sent');
     renderDetail(currentLead);
@@ -921,8 +816,6 @@ function markReviewSent() {
 function markReviewUnsent() {
   if (!currentLead) return;
   currentLead.reviewSent = false;
-  const idx = leads.findIndex(l => l.po === currentLead.po);
-  if (idx !== -1) leads[idx] = currentLead;
   updateLead(currentLead).then(() => renderDetail(currentLead));
 }
 
@@ -937,19 +830,17 @@ function onSearch() {
     return;
   }
   const results = leads.filter(l =>
-    l.custName.toLowerCase().includes(q) ||
-    l.po.toLowerCase().includes(q) ||
-    l.phone.toLowerCase().includes(q) ||
-    l.email.toLowerCase().includes(q) ||
+    l.custName.toLowerCase().includes(q)  ||
+    l.po.toLowerCase().includes(q)        ||
+    l.phone.toLowerCase().includes(q)     ||
+    l.email.toLowerCase().includes(q)     ||
     l.address.toLowerCase().includes(q)
   );
   el('searchCount').textContent = `${results.length} result${results.length !== 1 ? 's' : ''}`;
-
   if (!results.length) {
     el('searchResults').innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>No leads found</p></div>';
     return;
   }
-
   const container = document.createElement('div');
   container.className = 'card';
   container.style.padding = '0';
@@ -969,87 +860,85 @@ function onSearch() {
 function loadOfflineQueue() {
   try { return JSON.parse(localStorage.getItem('fcrm_queue') || '[]'); } catch(e) { return []; }
 }
-
 function saveOfflineQueue() {
   localStorage.setItem('fcrm_queue', JSON.stringify(offlineQueue));
 }
-
 function addToOfflineQueue(item) {
   offlineQueue.push(item);
   saveOfflineQueue();
 }
-
 async function retryOfflineQueue() {
   if (!offlineQueue.length) return;
   const pending = [...offlineQueue];
   offlineQueue = [];
   saveOfflineQueue();
-
   for (const item of pending) {
     try {
-      if (item.action === 'append') {
-        await sheetsAppend([leadToRow(item.lead)]);
-      } else if (item.action === 'update') {
-        await sheetsUpdate(item.range, [leadToRow(item.lead)]);
-      }
+      await scriptPost(item.action === 'append'
+        ? { action: 'append', row: leadToRow(item.lead) }
+        : { action: 'update', po: item.po, row: leadToRow(item.lead) });
     } catch(e) {
       offlineQueue.push(item);
     }
   }
   saveOfflineQueue();
-  if (offlineQueue.length === 0 && pending.length > 0) {
-    toast('Offline changes synced!');
-  }
+  if (offlineQueue.length === 0 && pending.length > 0) toast('✅ Offline changes synced!');
 }
 
 /* ══════════════════════════════════════════
    UTILITIES
 ══════════════════════════════════════════ */
-function el(id)       { return document.getElementById(id); }
-function val(id)      { return el(id)?.value || ''; }
-function setVal(id,v) { const e = el(id); if (e) e.value = v ?? ''; }
+function el(id)        { return document.getElementById(id); }
+function val(id)       { return el(id)?.value || ''; }
+function setVal(id, v) { const e = el(id); if (e) e.value = v ?? ''; }
 
 function money(n) {
   return '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
+function todayISO() { return new Date().toISOString().slice(0, 10); }
 function nowISO() {
   return new Date().toLocaleString('en-US', {
-    month: '2-digit', day: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit', hour12: true,
+    month:'2-digit', day:'2-digit', year:'numeric',
+    hour:'2-digit', minute:'2-digit', hour12: true,
   });
 }
-
 function daysSince(dateStr) {
   if (!dateStr) return 0;
+  // Handle both ISO dates (2026-03-11) and locale strings (03/11/2026, ...)
   const d = new Date(dateStr);
   if (isNaN(d)) return 0;
   return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
 }
-
 function firstNameOf(lead) {
-  const src = lead.contactName || lead.custName || '';
-  return src.split(' ')[0] || 'there';
+  return (lead.contactName || lead.custName || '').split(' ')[0] || 'there';
 }
-
 function generatePO(custName) {
   const d  = new Date();
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   const yy = String(d.getFullYear()).slice(-2);
   const code = (custName || 'XX')
-    .replace(/[^a-zA-Z\s]/g, '')
-    .split(/\s+/).filter(Boolean)
+    .replace(/[^a-zA-Z\s]/g, '').split(/\s+/).filter(Boolean)
     .map(w => w[0].toUpperCase()).join('').slice(0, 6);
   return `${mm}${dd}${yy}-${code}`;
+}
+
+function copyScript() {
+  const code = el('scriptCode')?.textContent || '';
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(code).then(() => toast('Script copied!'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    ta.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); toast('Script copied!'); } catch(e) {}
+    document.body.removeChild(ta);
+  }
 }
 
 let toastTimer;
@@ -1058,5 +947,5 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
 }
