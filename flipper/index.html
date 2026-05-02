@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.json">
+  <title>Flipper Tracker</title>
+  <style>
+    :root {
+      --brand: #1B4F8A;
+      --brand-dark: #143d6b;
+      --brand-light: #e8f0fb;
+      --accent: #2e7d32;
+      --warn: #e65100;
+      --sold: #2e7d32;
+      --border: #d0d0d0;
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --muted: #666;
+      --tap: 48px;
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    /* ── AUTH SCREEN ── */
+    #auth-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      background: var(--brand);
+    }
+    .auth-card {
+      background: white;
+      border-radius: 16px;
+      padding: 32px 24px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.2);
+    }
+    .auth-card h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--brand);
+      margin-bottom: 4px;
+    }
+    .auth-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+    .auth-error {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .auth-error.error { background: #ffebee; color: #c62828; }
+    .auth-error.info  { background: #e8f5e9; color: var(--accent); }
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 16px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .btn-google {
+      background: white;
+      color: var(--text);
+      border: 1.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 15px;
+    }
+    .btn-google:hover { background: var(--bg); }
+
+    /* ── HEADER ── */
+    .app-header {
+      background: var(--brand);
+      color: white;
+      padding: 14px 16px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+    .app-header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+    .app-header .subtitle { font-size: 11px; opacity: .75; margin-top: 1px; }
+    .header-left { display: flex; flex-direction: column; }
+    .user-btn {
+      background: rgba(255,255,255,.15);
+      border: none;
+      color: white;
+      width: 40px; height: 40px;
+      border-radius: 8px;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: white;
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+      box-shadow: 0 -2px 10px rgba(0,0,0,.08);
+    }
+    .bottom-nav button {
+      flex: 1;
+      padding: 10px 4px 14px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: color .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bottom-nav button .nav-icon { font-size: 22px; }
+    .bottom-nav button.active { color: var(--brand); }
+    .tab-indicator { display: none; width: 24px; height: 3px; background: var(--brand); border-radius: 2px; margin-top: 2px; }
+    .bottom-nav button.active .tab-indicator { display: block; }
+
+    /* ── VIEWS ── */
+    .view { display: none; padding: 16px; }
+    .view.active { display: block; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--brand);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--brand-light);
+    }
+
+    /* ── FIELDS ── */
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="date"],
+    select, textarea {
+      width: 100%;
+      min-height: var(--tap);
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: Arial, sans-serif;
+      color: var(--text);
+      background: white;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color .15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--brand);
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0l6 8 6-8z' fill='%23666'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+    textarea { min-height: 80px; resize: vertical; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      width: 100%;
+      min-height: 52px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: .2px;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity .15s;
+    }
+    .btn:active { opacity: .8; }
+    .btn:disabled { opacity: .5; cursor: default; }
+    .btn-primary   { background: var(--brand); color: white; }
+    .btn-secondary { background: white; color: var(--brand); border: 2px solid var(--brand); }
+    .btn-green     { background: var(--accent); color: white; }
+    .btn-warn      { background: var(--warn); color: white; }
+    .btn-ghost     { background: none; color: var(--muted); border: 1px solid var(--border); min-height: 44px; font-size: 14px; }
+    .btn-sm        { min-height: 36px; font-size: 13px; padding: 0 14px; width: auto; margin-bottom: 0; }
+
+    /* ── MODAL / BOTTOM SHEET ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 200;
+      justify-content: flex-end;
+      flex-direction: column;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-sheet {
+      background: white;
+      border-radius: 20px 20px 0 0;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 0 0 40px;
+    }
+    .modal-handle {
+      width: 40px; height: 4px;
+      background: #ccc;
+      border-radius: 2px;
+      margin: 14px auto 0;
+    }
+    .modal-header {
+      padding: 16px 20px;
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--brand);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-close {
+      background: none; border: none;
+      font-size: 24px; color: var(--muted);
+      cursor: pointer; line-height: 1;
+    }
+    .modal-body { padding: 16px 20px; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #222;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0;
+      transition: all .25s;
+      z-index: 300;
+      pointer-events: none;
+      max-width: 90vw;
+      white-space: normal;
+      text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--muted);
+    }
+    .empty-state .icon { font-size: 52px; margin-bottom: 14px; }
+    .empty-state p { font-size: 15px; line-height: 1.5; }
+
+    /* ── SPINNER ── */
+    .spinner {
+      text-align: center;
+      padding: 40px 20px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* ── DIVIDER ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+    /* ── SUMMARY CHIPS ── */
+    .summary-chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      margin-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .summary-chips::-webkit-scrollbar { display: none; }
+    .summary-chip {
+      flex-shrink: 0;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      text-align: center;
+    }
+    .summary-chip .chip-val {
+      display: block;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--brand);
+      margin-bottom: 2px;
+    }
+    .summary-chip .chip-val.green { color: var(--accent); }
+    .summary-chip .chip-val.red   { color: var(--warn); }
+
+    /* ── ITEM CARD ── */
+    .item-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .item-card:active { background: var(--brand-light); }
+    .item-thumb {
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: var(--bg);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .item-info { flex: 1; min-width: 0; }
+    .item-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+    .status-pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+    }
+    .status-active   { background: var(--brand); }
+    .status-sourcing { background: #607d8b; }
+    .status-sold     { background: var(--accent); }
+    .status-archived { background: #aaa; }
+    .item-category { font-size: 12px; color: var(--muted); }
+    .item-financials { display: flex; gap: 12px; font-size: 13px; font-weight: 600; }
+    .profit-positive { color: var(--accent); }
+    .profit-negative { color: var(--warn); }
+    .invested-label  { color: var(--muted); }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      flex-shrink: 0;
+      padding: 7px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1.5px solid var(--border);
+      background: white;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .filter-chip.active {
+      background: var(--brand);
+      color: white;
+      border-color: var(--brand);
+    }
+
+    /* ── DETAIL VIEW ── */
+    .detail-back {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: var(--brand-light);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--brand);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── PHOTO STRIP ── */
+    .photo-strip {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .photo-strip::-webkit-scrollbar { display: none; }
+    .photo-thumb-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .photo-thumb {
+      width: 80px; height: 80px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      display: block;
+    }
+    .photo-del {
+      position: absolute;
+      top: -6px; right: -6px;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--warn);
+      color: white;
+      border: none;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+    .photo-add-btn {
+      width: 80px; height: 80px;
+      border-radius: 8px;
+      border: 2px dashed var(--border);
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .photo-add-btn .icon { font-size: 24px; }
+
+    /* ── LIGHTBOX ── */
+    #lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.93);
+      z-index: 400;
+      align-items: center;
+      justify-content: center;
+    }
+    #lightbox.open { display: flex; }
+    #lightbox img { max-width: 95vw; max-height: 90vh; border-radius: 4px; object-fit: contain; }
+    #lightbox-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: rgba(255,255,255,.15);
+      border: none;
+      color: white;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    /* ── LINE ITEMS (parts / trips) ── */
+    .line-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--bg);
+      gap: 10px;
+    }
+    .line-item-row:last-child { border-bottom: none; }
+    .line-item-info { flex: 1; min-width: 0; }
+    .line-item-name { font-size: 14px; font-weight: 600; }
+    .line-item-sub  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .line-item-cost { font-size: 14px; font-weight: 700; color: var(--brand); white-space: nowrap; }
+    .del-btn {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .del-btn:active { color: var(--warn); }
+
+    /* ── INLINE ADD FORM ── */
+    .inline-form {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .inline-form .field { margin-bottom: 10px; }
+    .inline-form .field:last-child { margin-bottom: 0; }
+    .inline-form input, .inline-form select, .inline-form textarea {
+      font-size: 15px;
+      min-height: 44px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* ── FINANCIALS SUMMARY ── */
+    .fin-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .fin-box {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    .fin-box .fin-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); margin-bottom: 4px; }
+    .fin-box .fin-val   { font-size: 18px; font-weight: 800; color: var(--brand); }
+    .fin-box .fin-val.green { color: var(--accent); }
+    .fin-box .fin-val.red   { color: var(--warn); }
+
+    /* ── CALC ── */
+    .calc-result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--bg);
+      font-size: 14px;
+    }
+    .calc-result-row:last-child { border-bottom: none; }
+    .calc-result-row .label { color: var(--muted); font-weight: 600; }
+    .calc-result-row .value { font-weight: 800; color: var(--brand); }
+    .calc-result-row.total  .value { font-size: 18px; color: var(--accent); }
+    .calc-result-row.loss   .value { color: var(--warn); }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+    .section-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin: -10px 0 12px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ AUTH SCREEN ══ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <h1>Flipper Tracker</h1>
+    <p class="auth-sub">Track your flips. Know your profit.</p>
+
+    <div id="auth-error" class="auth-error" style="display:none;"></div>
+
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <button class="btn btn-primary" id="btn-signin">Sign In</button>
+    <button class="btn btn-secondary" id="btn-signup">Create Account</button>
+
+    <div class="auth-divider"><span>or</span></div>
+
+    <button class="btn btn-google" id="btn-google">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+      Continue with Google
+    </button>
+  </div>
+</div>
+
+<!-- ══ APP HEADER ══ -->
+<header class="app-header" id="app-header" style="display:none;">
+  <div class="header-left">
+    <h1>Flipper Tracker</h1>
+  </div>
+  <button class="user-btn" id="user-btn" aria-label="Account">👤</button>
+</header>
+
+<!-- ══ APP BODY ══ -->
+<div id="app-body" style="display:none;">
+
+  <!-- DASHBOARD -->
+  <div class="view" id="view-dashboard">
+    <div class="spinner" id="spinner-dashboard" style="display:none;">Loading your flips…</div>
+    <div id="dashboard-content"></div>
+  </div>
+
+  <!-- ITEMS -->
+  <div class="view" id="view-items">
+    <div class="filter-bar" id="items-filter-bar">
+      <button class="filter-chip active" data-status="all">All</button>
+      <button class="filter-chip" data-status="sourcing">Sourcing</button>
+      <button class="filter-chip" data-status="active">Active</button>
+      <button class="filter-chip" data-status="sold">Sold</button>
+    </div>
+    <div id="items-list"></div>
+  </div>
+
+  <!-- ADD / EDIT ITEM -->
+  <div class="view" id="view-add-item">
+    <div class="card">
+      <div class="card-title" id="add-item-title">New Flip</div>
+      <div class="field">
+        <label>Item Name *</label>
+        <input type="text" id="fi_name" placeholder="e.g. Vintage Dresser" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <select id="fi_category">
+          <option value="Furniture">Furniture</option>
+          <option value="Electronics">Electronics</option>
+          <option value="Clothing">Clothing</option>
+          <option value="Tools">Tools</option>
+          <option value="Vehicles">Vehicles</option>
+          <option value="Appliances">Appliances</option>
+          <option value="Collectibles">Collectibles</option>
+          <option value="Sports">Sports</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="fi_description" placeholder="Condition, where found, any notes…"></textarea>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="fi_status" onchange="toggleSoldFields()">
+          <option value="sourcing">Sourcing</option>
+          <option value="active" selected>Active</option>
+          <option value="sold">Sold</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Date Acquired</label>
+        <input type="date" id="fi_date_added">
+      </div>
+      <div class="field">
+        <label>Purchase Price ($)</label>
+        <input type="number" id="fi_purchase_price" placeholder="0.00" inputmode="decimal" min="0" step="0.01">
+      </div>
+      <div id="sold-fields" style="display:none;">
+        <div class="field">
+          <label>Sell Price ($)</label>
+          <input type="number" id="fi_sell_price" placeholder="0.00" inputmode="decimal" min="0" step="0.01">
+        </div>
+        <div class="field">
+          <label>Date Sold</label>
+          <input type="date" id="fi_date_sold">
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="btn-save-item">Save Flip</button>
+    <button class="btn btn-ghost" id="btn-cancel-item">Cancel</button>
+  </div>
+
+  <!-- PROFIT CALCULATOR -->
+  <div class="view" id="view-calc">
+    <div class="card">
+      <div class="card-title">Load from Saved Item</div>
+      <div class="field">
+        <select id="calc-item-select" onchange="loadItemIntoCalc()">
+          <option value="">— scratch pad —</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Enter Costs</div>
+      <div class="field">
+        <label>Purchase Price ($)</label>
+        <input type="number" id="calc-purchase" placeholder="0.00" inputmode="decimal" min="0" step="0.01" oninput="recalcQuick()">
+      </div>
+      <div class="field">
+        <label>Parts &amp; Repairs ($)</label>
+        <input type="number" id="calc-parts" placeholder="0.00" inputmode="decimal" min="0" step="0.01" oninput="recalcQuick()">
+      </div>
+      <div class="field">
+        <label>Miles Driven (total)</label>
+        <input type="number" id="calc-miles" placeholder="0" inputmode="decimal" min="0" step="0.1" oninput="recalcQuick()">
+      </div>
+      <div class="field">
+        <label>Sell Price ($)</label>
+        <input type="number" id="calc-sell" placeholder="0.00" inputmode="decimal" min="0" step="0.01" oninput="recalcQuick()">
+      </div>
+    </div>
+
+    <div class="card" id="calc-results">
+      <div class="card-title">Results</div>
+      <div class="calc-result-row">
+        <span class="label">Mileage Cost</span>
+        <span class="value" id="calc-res-mileage">$0.00</span>
+      </div>
+      <div class="calc-result-row">
+        <span class="label">Total Invested</span>
+        <span class="value" id="calc-res-cost">$0.00</span>
+      </div>
+      <div class="calc-result-row">
+        <span class="label">Break-even Price</span>
+        <span class="value" id="calc-res-breakeven">$0.00</span>
+      </div>
+      <div class="calc-result-row total" id="calc-profit-row">
+        <span class="label">Net Profit</span>
+        <span class="value" id="calc-res-profit">—</span>
+      </div>
+      <div class="calc-result-row">
+        <span class="label">Margin</span>
+        <span class="value" id="calc-res-margin">—</span>
+      </div>
+      <p class="section-sub" style="margin-top:10px;" id="calc-rate-note"></p>
+    </div>
+  </div>
+
+  <!-- ARCHIVE -->
+  <div class="view" id="view-archive">
+    <p class="section-sub" style="margin-bottom:14px;">Archived flips — tap to restore</p>
+    <div id="archive-list"></div>
+  </div>
+
+  <!-- DETAIL -->
+  <div class="view" id="view-detail">
+    <div class="detail-back" id="detail-back">← Back</div>
+    <div id="detail-content" style="padding:0 16px 16px;"></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <button id="nav-dashboard" onclick="showView('dashboard')">
+      <span class="nav-icon">📊</span><span>Dashboard</span>
+      <span class="tab-indicator"></span>
+    </button>
+    <button id="nav-items" onclick="showView('items')">
+      <span class="nav-icon">📦</span><span>Items</span>
+      <span class="tab-indicator"></span>
+    </button>
+    <button id="nav-add-item" onclick="openAddForm(null)">
+      <span class="nav-icon">➕</span><span>Add</span>
+      <span class="tab-indicator"></span>
+    </button>
+    <button id="nav-calc" onclick="showView('calc')">
+      <span class="nav-icon">🧮</span><span>Calc</span>
+      <span class="tab-indicator"></span>
+    </button>
+    <button id="nav-archive" onclick="showView('archive')">
+      <span class="nav-icon">🗂</span><span>Archive</span>
+      <span class="tab-indicator"></span>
+    </button>
+  </nav>
+
+</div><!-- /app-body -->
+
+<!-- ══ USER MENU MODAL ══ -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span>Account</span>
+      <button class="modal-close" id="close-user-modal">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--muted);margin-bottom:16px;" id="user-email-display"></p>
+      <div class="field">
+        <label>IRS Mileage Rate ($/mile)</label>
+        <input type="number" id="s_mileage_rate" placeholder="0.70" inputmode="decimal" step="0.01" min="0">
+      </div>
+      <button class="btn btn-secondary" id="btn-save-settings" style="margin-bottom:10px;">Save Settings</button>
+      <button class="btn btn-warn" id="btn-signout">Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LIGHTBOX ══ -->
+<div id="lightbox">
+  <button id="lightbox-close">×</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast"></div>
+
+<!-- ══ SUPABASE CDN ══ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- ══ SUPABASE KEYS — public anon keys, safe to ship. RLS enforces data isolation. ══ -->
+<script>
+  const SUPABASE_URL      = 'https://YOURREF.supabase.co';
+  const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+</script>
+
+<script src="app.js?v=1"></script>
+</body>
+</html>

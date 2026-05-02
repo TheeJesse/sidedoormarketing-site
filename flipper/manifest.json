@@ -1,0 +1,9 @@
+{
+  "name": "Flipper Tracker",
+  "short_name": "Flipper",
+  "start_url": "/flipper/",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#1B4F8A",
+  "icons": []
+}

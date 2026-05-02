@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/flipper/(.*)", "destination": "/flipper/index.html" },
+    { "source": "/fencecrm/(.*)", "destination": "/fencecrm/index.html" },
+    { "source": "/fenceflow/(.*)", "destination": "/fenceflow/index.html" }
+  ]
+}
