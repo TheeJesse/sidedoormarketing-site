@@ -1,6 +1,9 @@
 import { notFound } from 'next/navigation'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Avatar } from '@/components/ui/Avatar'
+import { AvatarUpload } from '@/components/ui/AvatarUpload'
 import { Badge } from '@/components/ui/Badge'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
@@ -32,6 +35,9 @@ export default async function ProfilePage({ params }: { params: { id: string } }
 
   if (!user || user.isHidden) notFound()
 
+  const session = await getServerSession(authOptions)
+  const isOwn = session?.user?.id === params.id
+
   const location = [user.city, user.state].filter(Boolean).join(', ')
 
   const TRUST_BADGES = [
@@ -55,7 +61,11 @@ export default async function ProfilePage({ params }: { params: { id: string } }
         <div className="px-6 pb-6">
           {/* Avatar floats above band */}
           <div className="-mt-10 mb-4">
-            <Avatar name={user.name} photoUrl={user.profilePhoto} size="xl" className="border-4 border-white shadow-sm" />
+            {isOwn ? (
+              <AvatarUpload userId={params.id} name={user.name} photoUrl={user.profilePhoto} />
+            ) : (
+              <Avatar name={user.name} photoUrl={user.profilePhoto} size="xl" className="border-4 border-white shadow-sm" />
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
