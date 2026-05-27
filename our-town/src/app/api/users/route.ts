@@ -43,7 +43,10 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: 'desc' },
   })
 
-  return NextResponse.json(users)
+  return NextResponse.json(
+    users.map(({ passwordHash: _, ...u }) => u),
+    { headers: { 'Cache-Control': 'no-store' } }
+  )
 }
 
 // POST /api/users — sign up

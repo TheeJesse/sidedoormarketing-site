@@ -1,3 +1,7 @@
+'use client'
+
+import { useState } from 'react'
+
 interface AvatarProps {
   name: string
   photoUrl?: string | null
@@ -12,7 +16,6 @@ const sizes = {
   xl: 'w-24 h-24 text-3xl',
 }
 
-// Generate a consistent earthy background color from name
 function colorFromName(name: string): string {
   const colors = [
     'bg-brand-200 text-brand-800',
@@ -26,30 +29,29 @@ function colorFromName(name: string): string {
   return colors[index]
 }
 
-export function Avatar({ name, photoUrl, size = 'md', className = '' }: AvatarProps) {
-  const initials = name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+function Initials({ name, size, className }: { name: string; size: string; className: string }) {
+  const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  return (
+    <div className={`${size} ${colorFromName(name)} rounded-full flex items-center justify-center font-semibold flex-shrink-0 ${className}`}>
+      {initials}
+    </div>
+  )
+}
 
-  if (photoUrl) {
+export function Avatar({ name, photoUrl, size = 'md', className = '' }: AvatarProps) {
+  const [errored, setErrored] = useState(false)
+
+  if (photoUrl && !errored) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={photoUrl}
         alt={name}
         className={`${sizes[size]} rounded-full object-cover flex-shrink-0 ${className}`}
+        onError={() => setErrored(true)}
       />
     )
   }
 
-  return (
-    <div
-      className={`${sizes[size]} ${colorFromName(name)} rounded-full flex items-center justify-center font-semibold flex-shrink-0 ${className}`}
-    >
-      {initials}
-    </div>
-  )
+  return <Initials name={name} size={sizes[size]} className={className} />
 }

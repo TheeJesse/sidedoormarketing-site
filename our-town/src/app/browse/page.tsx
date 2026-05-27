@@ -34,7 +34,7 @@ export default function BrowsePage() {
     if (kw) params.set('keyword', kw)
     if (ct) params.set('city', ct)
     if (cat) params.set('category', cat)
-    const res = await fetch('/api/users?' + params.toString())
+    const res = await fetch('/api/users?' + params.toString(), { cache: 'no-store' })
     const data = await res.json()
     setUsers(data)
     setLoading(false)
