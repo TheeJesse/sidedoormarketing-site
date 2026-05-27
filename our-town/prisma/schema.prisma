@@ -3,9 +3,7 @@ generator client {
 }
 
 datasource db {
-  // Local preview: "sqlite" + file:./dev.db
-  // Production:   "postgresql" + Supabase connection string
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
