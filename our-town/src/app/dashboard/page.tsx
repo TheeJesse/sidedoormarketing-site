@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -22,14 +22,21 @@ type UserProfile = {
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [activeTab, setActiveTab] = useState<'profile' | 'offers' | 'needs'>('profile')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoError, setPhotoError] = useState('')
 
-  const [editForm, setEditForm] = useState({ name: '', city: '', state: '', zip: '', bio: '', radius: '25', contactMethod: 'email', contactValue: '' })
+  const [editForm, setEditForm] = useState({
+    name: '', city: '', state: '', zip: '', bio: '',
+    radius: '25', contactMethod: 'email', contactValue: '',
+  })
   const [offerInput, setOfferInput] = useState('')
   const [offerCat, setOfferCat] = useState('')
   const [needInput, setNeedInput] = useState('')
@@ -71,6 +78,50 @@ export default function DashboardPage() {
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoError('')
+    if (!file.type.startsWith('image/')) {
+      setPhotoError('Please select an image file.')
+      return
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setPhotoError('Image must be under 3MB.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => setPhotoPreview(reader.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  async function uploadPhoto() {
+    if (!session || !fileInputRef.current?.files?.[0]) return
+    setPhotoUploading(true)
+    setPhotoError('')
+    const formData = new FormData()
+    formData.append('photo', fileInputRef.current.files[0])
+    const res = await fetch(`/api/users/${session.user.id}/photo`, {
+      method: 'POST',
+      body: formData,
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      setPhotoError(data.error || 'Upload failed.')
+    } else {
+      setProfile(p => p ? { ...p, profilePhoto: data.url } : p)
+      setPhotoPreview(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+    setPhotoUploading(false)
+  }
+
+  function cancelPhotoPreview() {
+    setPhotoPreview(null)
+    setPhotoError('')
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   async function addOffer() {
@@ -124,26 +175,79 @@ export default function DashboardPage() {
     { id: 'needs' as const, label: `Looking For (${profile.needs.length})`, icon: '🔍' },
   ]
 
+  const displayPhoto = photoPreview || profile.profilePhoto
+
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
         <div className="flex items-center gap-4">
-          <Avatar name={profile.name} photoUrl={profile.profilePhoto} size="lg" />
+          {/* Clickable avatar opens file picker */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="relative group flex-shrink-0"
+            title="Change profile photo"
+          >
+            <Avatar name={profile.name} photoUrl={displayPhoto} size="lg" />
+            <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span className="text-white text-xs font-medium">📷</span>
+            </div>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
           <div>
             <h1 className="text-2xl font-bold text-earth-800">{profile.name}</h1>
             <p className="text-earth-400 text-sm">{[profile.city, profile.state].filter(Boolean).join(', ')}</p>
+            {!photoPreview && (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="text-xs text-brand-500 hover:text-brand-600 mt-0.5"
+              >
+                {profile.profilePhoto ? 'Change photo' : '+ Add photo'}
+              </button>
+            )}
           </div>
         </div>
         <div className="flex gap-2">
           <Link href={`/profile/${profile.id}`} target="_blank">
-            <Button variant="secondary" size="sm">View public profile ↗</Button>
+            <Button variant="secondary" size="sm">View profile ↗</Button>
           </Link>
           <Link href="/matches">
             <Button size="sm">See matches</Button>
           </Link>
         </div>
       </div>
+
+      {/* Photo preview / confirm bar */}
+      {photoPreview && (
+        <div className="mb-6 bg-brand-50 border border-brand-200 rounded-2xl p-4 flex items-center gap-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photoPreview} alt="Preview" className="w-14 h-14 rounded-full object-cover border-2 border-brand-300" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-earth-700">Looking good! Upload this photo?</p>
+            {photoError && <p className="text-xs text-red-500 mt-0.5">{photoError}</p>}
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <Button size="sm" onClick={uploadPhoto} disabled={photoUploading}>
+              {photoUploading ? 'Uploading…' : 'Upload'}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={cancelPhotoPreview} disabled={photoUploading}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {photoError && !photoPreview && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">
+          {photoError}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 bg-earth-100 p-1 rounded-xl mb-6">
@@ -215,7 +319,6 @@ export default function DashboardPage() {
             <Input label="Contact value (shown on your public profile)" id="contactValue"
               value={editForm.contactValue}
               onChange={e => setEditForm(f => ({ ...f, contactValue: e.target.value }))} />
-
             <Button onClick={saveProfile} disabled={saving}>
               {saving ? 'Saving…' : saved ? '✓ Saved!' : 'Save changes'}
             </Button>
@@ -227,8 +330,6 @@ export default function DashboardPage() {
       {activeTab === 'offers' && (
         <div className="bg-white rounded-2xl border border-bark-200 shadow-sm p-6">
           <h2 className="font-semibold text-earth-700 mb-5">What you offer</h2>
-
-          {/* Add */}
           <div className="flex gap-2 mb-5">
             <input
               className="flex-1 px-4 py-2.5 rounded-xl border border-earth-200 bg-white text-sm text-earth-800 placeholder:text-earth-400 focus:outline-none focus:ring-2 focus:ring-brand-400"
@@ -249,8 +350,6 @@ export default function DashboardPage() {
             </select>
             <Button size="sm" onClick={addOffer}>Add</Button>
           </div>
-
-          {/* List */}
           {profile.offers.length === 0 ? (
             <p className="text-sm text-earth-400 py-4 text-center">No offers yet. Add what you can do!</p>
           ) : (
@@ -262,10 +361,7 @@ export default function DashboardPage() {
                     <span className="text-sm text-earth-700 font-medium truncate">{o.title}</span>
                     {o.category && <Badge variant="green">{o.category.icon} {o.category.name}</Badge>}
                   </div>
-                  <button
-                    onClick={() => removeOffer(o.id)}
-                    className="text-earth-300 hover:text-red-400 transition-colors text-xs flex-shrink-0"
-                  >
+                  <button onClick={() => removeOffer(o.id)} className="text-earth-300 hover:text-red-400 transition-colors text-xs flex-shrink-0">
                     Remove
                   </button>
                 </li>
@@ -279,8 +375,6 @@ export default function DashboardPage() {
       {activeTab === 'needs' && (
         <div className="bg-white rounded-2xl border border-bark-200 shadow-sm p-6">
           <h2 className="font-semibold text-earth-700 mb-5">What you&apos;re looking for</h2>
-
-          {/* Add */}
           <div className="flex gap-2 mb-5">
             <input
               className="flex-1 px-4 py-2.5 rounded-xl border border-earth-200 bg-white text-sm text-earth-800 placeholder:text-earth-400 focus:outline-none focus:ring-2 focus:ring-brand-400"
@@ -301,8 +395,6 @@ export default function DashboardPage() {
             </select>
             <Button size="sm" onClick={addNeed}>Add</Button>
           </div>
-
-          {/* List */}
           {profile.needs.length === 0 ? (
             <p className="text-sm text-earth-400 py-4 text-center">No needs listed yet. Add what you&apos;re looking for!</p>
           ) : (
@@ -314,10 +406,7 @@ export default function DashboardPage() {
                     <span className="text-sm text-earth-700 font-medium truncate">{n.title}</span>
                     {n.category && <Badge variant="amber">{n.category.icon} {n.category.name}</Badge>}
                   </div>
-                  <button
-                    onClick={() => removeNeed(n.id)}
-                    className="text-earth-300 hover:text-red-400 transition-colors text-xs flex-shrink-0"
-                  >
+                  <button onClick={() => removeNeed(n.id)} className="text-earth-300 hover:text-red-400 transition-colors text-xs flex-shrink-0">
                     Remove
                   </button>
                 </li>
