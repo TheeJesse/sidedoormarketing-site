@@ -35,6 +35,9 @@ export function Navbar() {
             <Link href="/browse" className="text-sm text-earth-600 hover:text-brand-600 font-medium transition-colors">
               Browse
             </Link>
+            <Link href="/pricing" className="text-sm text-earth-600 hover:text-brand-600 font-medium transition-colors">
+              Pricing
+            </Link>
             {session && (
               <>
                 <Link href="/dashboard" className="text-sm text-earth-600 hover:text-brand-600 font-medium transition-colors">
@@ -95,6 +98,9 @@ export function Navbar() {
         <div className="md:hidden bg-white border-t border-bark-200 px-4 py-4 flex flex-col gap-3">
           <Link href="/browse" className="text-sm text-earth-700 font-medium" onClick={() => setMenuOpen(false)}>
             Browse Local Trades
+          </Link>
+          <Link href="/pricing" className="text-sm text-earth-700 font-medium" onClick={() => setMenuOpen(false)}>
+            Pricing
           </Link>
           {session ? (
             <>
