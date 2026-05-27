@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Avatar } from './Avatar'
+import { Avatar } from '@/components/ui/Avatar'
 
 interface AvatarUploadProps {
   userId: string
@@ -10,65 +10,70 @@ interface AvatarUploadProps {
 }
 
 export function AvatarUpload({ userId, name, photoUrl }: AvatarUploadProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [currentUrl, setCurrentUrl] = useState(photoUrl ?? null)
   const [uploading, setUploading] = useState(false)
-  const [url, setUrl] = useState(photoUrl)
+  const [error, setError] = useState('')
 
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    setError('')
+    if (!file.type.startsWith('image/')) { setError('Please select an image.'); return }
+    if (file.size > 3 * 1024 * 1024) { setError('Image must be under 3MB.'); return }
+    const reader = new FileReader()
+    reader.onload = () => setPreview(reader.result as string)
+    reader.readAsDataURL(file)
+  }
 
+  async function upload() {
+    if (!fileInputRef.current?.files?.[0]) return
     setUploading(true)
-    try {
-      const form = new FormData()
-      form.append('photo', file)
-
-      const res = await fetch(`/api/users/${userId}/photo`, {
-        method: 'POST',
-        body: form,
-      })
-
-      if (!res.ok) {
-        const err = await res.json()
-        alert(err.error || 'Upload failed')
-        return
-      }
-
-      const data = await res.json()
-      setUrl(data.url)
-    } catch {
-      alert('Upload failed — try again')
-    } finally {
-      setUploading(false)
+    setError('')
+    const formData = new FormData()
+    formData.append('photo', fileInputRef.current.files[0])
+    const res = await fetch(`/api/users/${userId}/photo`, { method: 'POST', body: formData })
+    const data = await res.json()
+    if (!res.ok) {
+      setError(data.error || 'Upload failed.')
+    } else {
+      setCurrentUrl(data.url)
+      setPreview(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
+    setUploading(false)
   }
 
   return (
-    <button
-      type="button"
-      disabled={uploading}
-      onClick={() => inputRef.current?.click()}
-      className="relative group block"
-      title="Change photo"
-    >
-      <Avatar
-        name={name}
-        photoUrl={url}
-        size="xl"
-        className="border-4 border-white shadow-sm group-hover:opacity-80 transition-opacity"
-      />
-      <div className="absolute inset-0 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
-        <span className="text-white text-xs font-medium">
-          {uploading ? '…' : '📷'}
-        </span>
-      </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFile}
-      />
-    </button>
+    <div className="flex flex-col items-start gap-2">
+      <button onClick={() => fileInputRef.current?.click()} className="relative group flex-shrink-0" title="Change profile photo">
+        <Avatar name={name} photoUrl={preview ?? currentUrl} size="xl" className="border-4 border-white shadow-sm" />
+        <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <span className="text-white text-sm">📷</span>
+        </div>
+      </button>
+
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+
+      {preview && (
+        <div className="flex gap-2 items-center">
+          <button onClick={upload} disabled={uploading} className="text-xs font-medium bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-lg disabled:opacity-50">
+            {uploading ? 'Uploading…' : 'Save photo'}
+          </button>
+          <button onClick={() => { setPreview(null); if (fileInputRef.current) fileInputRef.current.value = '' }} className="text-xs text-earth-400 hover:text-earth-600">
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {!preview && (
+        <button onClick={() => fileInputRef.current?.click()} className="text-xs text-brand-500 hover:text-brand-600">
+          {currentUrl ? 'Change photo' : '+ Add photo'}
+        </button>
+      )}
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
+    </div>
   )
 }
