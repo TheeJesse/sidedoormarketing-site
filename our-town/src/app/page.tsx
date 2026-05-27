@@ -3,16 +3,22 @@ import { Button } from '@/components/ui/Button'
 import { prisma } from '@/lib/prisma'
 import { UserCard } from '@/components/browse/UserCard'
 
+export const dynamic = 'force-dynamic'
+
 async function getRecentUsers() {
-  return prisma.user.findMany({
-    where: { isApproved: true, isHidden: false },
-    include: {
-      offers: { include: { category: true } },
-      needs: { include: { category: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 3,
-  })
+  try {
+    return await prisma.user.findMany({
+      where: { isApproved: true, isHidden: false },
+      include: {
+        offers: { include: { category: true } },
+        needs: { include: { category: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 3,
+    })
+  } catch {
+    return []
+  }
 }
 
 const HOW_IT_WORKS = [

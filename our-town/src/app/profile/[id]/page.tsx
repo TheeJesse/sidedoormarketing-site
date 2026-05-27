@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/Badge'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const user = await prisma.user.findUnique({ where: { id: params.id } })
   if (!user) return {}
