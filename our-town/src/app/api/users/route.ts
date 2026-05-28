@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import { sendVerificationEmail } from '@/lib/email'
 
 // GET /api/users — browse directory with optional filters
 export async function GET(req: NextRequest) {
@@ -13,6 +15,8 @@ export async function GET(req: NextRequest) {
     where: {
       isApproved: true,
       isHidden: false,
+      emailVerified: { not: null },
+      onboardingComplete: true,
       ...(city ? { city: { contains: city, mode: 'insensitive' } } : {}),
       ...(keyword
         ? {
@@ -62,22 +66,19 @@ export async function POST(req: NextRequest) {
   }
 
   const passwordHash = await bcrypt.hash(password, 10)
+  const verificationToken = crypto.randomBytes(32).toString('hex')
+
   const user = await prisma.user.create({
     data: {
       name,
       email,
       passwordHash,
-      city,
-      state,
-      zip,
-      bio,
-      radius: radius ? Number(radius) : 25,
-      contactMethod,
-      contactValue,
+      verificationToken,
     },
   })
 
-  // Return without passwordHash
-  const { passwordHash: _, ...safe } = user
+  await sendVerificationEmail(email, verificationToken)
+
+  const { passwordHash: _, verificationToken: _t, ...safe } = user
   return NextResponse.json(safe, { status: 201 })
 }

@@ -22,12 +22,18 @@ export const authOptions: NextAuthOptions = {
         const valid = await bcrypt.compare(credentials.password, user.passwordHash)
         if (!valid) return null
 
+        if (!user.emailVerified && !user.isAdmin) {
+          throw new Error('verify-email')
+        }
+
         return {
           id: user.id,
           name: user.name,
           email: user.email,
           isAdmin: user.isAdmin,
           plan: user.plan,
+          emailVerified: !!user.emailVerified,
+          onboardingComplete: user.onboardingComplete,
         }
       },
     }),
@@ -38,10 +44,16 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.isAdmin = (user as { isAdmin?: boolean }).isAdmin ?? false
         token.plan = (user as { plan?: string }).plan ?? 'free'
+        token.emailVerified = (user as { emailVerified?: boolean }).emailVerified ?? false
+        token.onboardingComplete = (user as { onboardingComplete?: boolean }).onboardingComplete ?? false
       }
       if (trigger === 'update') {
         const dbUser = await prisma.user.findUnique({ where: { id: token.id as string } })
-        if (dbUser) token.plan = dbUser.plan
+        if (dbUser) {
+          token.plan = dbUser.plan
+          token.emailVerified = !!dbUser.emailVerified
+          token.onboardingComplete = dbUser.onboardingComplete
+        }
       }
       return token
     },
@@ -50,6 +62,8 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string
         session.user.isAdmin = token.isAdmin as boolean
         session.user.plan = (token.plan as string) ?? 'free'
+        session.user.emailVerified = token.emailVerified as boolean
+        session.user.onboardingComplete = token.onboardingComplete as boolean
       }
       return session
     },

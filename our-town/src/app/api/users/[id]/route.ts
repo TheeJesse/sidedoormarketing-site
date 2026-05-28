@@ -30,7 +30,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const body = await req.json()
-  const { name, city, state, zip, bio, radius, contactMethod, contactValue, isHidden, isApproved } = body
+  const { name, city, state, zip, bio, radius, contactMethod, contactValue, isHidden, isApproved, onboardingComplete } = body
 
   const updated = await prisma.user.update({
     where: { id: params.id },
@@ -43,6 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       ...(radius !== undefined && { radius: Number(radius) }),
       ...(contactMethod !== undefined && { contactMethod }),
       ...(contactValue !== undefined && { contactValue }),
+      ...(onboardingComplete !== undefined && { onboardingComplete }),
       // Admin-only fields
       ...(session.user.isAdmin && isHidden !== undefined && { isHidden }),
       ...(session.user.isAdmin && isApproved !== undefined && { isApproved }),

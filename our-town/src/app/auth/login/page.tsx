@@ -31,7 +31,11 @@ function LoginForm() {
     })
 
     if (result?.error) {
-      setError('Invalid email or password.')
+      if (result.error.includes('verify-email')) {
+        router.push(`/auth/verify-pending?email=${encodeURIComponent(email)}`)
+      } else {
+        setError('Invalid email or password.')
+      }
       setLoading(false)
     } else {
       router.push(callbackUrl)
@@ -51,6 +55,24 @@ function LoginForm() {
           {params.get('error') === 'SessionRequired' && (
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl text-sm">
               Please log in to continue.
+            </div>
+          )}
+
+          {params.get('verified') === 'true' && (
+            <div className="mb-4 p-3 bg-brand-50 border border-brand-200 text-brand-700 rounded-xl text-sm">
+              ✓ Email verified! You can now log in.
+            </div>
+          )}
+
+          {params.get('error') === 'invalid-token' && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">
+              Invalid or expired verification link. Please request a new one.
+            </div>
+          )}
+
+          {params.get('error') === 'verify-email' && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl text-sm">
+              Please verify your email before logging in. Check your inbox for the verification link.
             </div>
           )}
 

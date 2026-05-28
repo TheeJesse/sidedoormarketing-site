@@ -38,7 +38,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/auth/login?callbackUrl=/dashboard')
-  }, [status, router])
+    if (status === 'authenticated' && session) {
+      if (!session.user.emailVerified) {
+        router.push(`/auth/verify-pending?email=${encodeURIComponent(session.user.email || '')}`)
+      } else if (!session.user.onboardingComplete) {
+        router.push('/onboarding')
+      }
+    }
+  }, [status, session, router])
 
   useEffect(() => {
     if (session?.user.id) {
