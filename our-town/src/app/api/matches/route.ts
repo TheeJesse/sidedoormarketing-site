@@ -4,6 +4,10 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { findTopMatches, MatchableUser } from '@/lib/matching'
 
+export const dynamic = 'force-dynamic'
+
+const FREE_MATCH_LIMIT = 3
+
 // GET /api/matches — returns top matches for the current user
 export async function GET(_req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -18,7 +22,7 @@ export async function GET(_req: NextRequest) {
   })
 
   const subject = allUsers.find(u => u.id === session.user.id)
-  if (!subject) return NextResponse.json([])
+  if (!subject) return NextResponse.json({ matches: [], total: 0, capped: false })
 
   const candidates: MatchableUser[] = allUsers.map(u => ({
     id: u.id,
@@ -38,6 +42,10 @@ export async function GET(_req: NextRequest) {
     needs: subject.needs,
   }
 
-  const matches = findTopMatches(subjectMatchable, candidates, 10)
-  return NextResponse.json(matches)
+  const allMatches = findTopMatches(subjectMatchable, candidates, 20)
+  const isFree = subject.plan === 'free'
+  const capped = isFree && allMatches.length > FREE_MATCH_LIMIT
+  const matches = isFree ? allMatches.slice(0, FREE_MATCH_LIMIT) : allMatches
+
+  return NextResponse.json({ matches, total: allMatches.length, capped })
 }

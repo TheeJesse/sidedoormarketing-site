@@ -12,6 +12,8 @@ export default function MatchesPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [matches, setMatches] = useState<MatchResult[]>([])
+  const [totalMatches, setTotalMatches] = useState(0)
+  const [capped, setCapped] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -22,8 +24,10 @@ export default function MatchesPage() {
     if (status === 'authenticated') {
       fetch('/api/matches')
         .then(r => r.json())
-        .then((data: MatchResult[]) => {
-          setMatches(data)
+        .then((data: { matches: MatchResult[]; total: number; capped: boolean }) => {
+          setMatches(data.matches)
+          setTotalMatches(data.total)
+          setCapped(data.capped)
           setLoading(false)
         })
     }
@@ -76,9 +80,24 @@ export default function MatchesPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {matches.map((match, i) => (
+          {matches.map((match) => (
             <MatchCard key={match.user.id} match={match} />
           ))}
+
+          {capped && (
+            <div className="rounded-2xl border border-brand-200 bg-brand-50 p-6 text-center">
+              <div className="text-3xl mb-2">🌳</div>
+              <h3 className="font-bold text-earth-800 mb-1">
+                {totalMatches - matches.length} more match{totalMatches - matches.length === 1 ? '' : 'es'} available
+              </h3>
+              <p className="text-sm text-earth-500 mb-4">
+                Free accounts see up to 3 matches. Upgrade to see all of them.
+              </p>
+              <Link href="/pricing">
+                <Button size="sm">View plans</Button>
+              </Link>
+            </div>
+          )}
 
           <div className="text-center pt-4">
             <Link href="/browse">
