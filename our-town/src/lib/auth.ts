@@ -27,15 +27,21 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           isAdmin: user.isAdmin,
+          plan: user.plan,
         }
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id
         token.isAdmin = (user as { isAdmin?: boolean }).isAdmin ?? false
+        token.plan = (user as { plan?: string }).plan ?? 'free'
+      }
+      if (trigger === 'update') {
+        const dbUser = await prisma.user.findUnique({ where: { id: token.id as string } })
+        if (dbUser) token.plan = dbUser.plan
       }
       return token
     },
@@ -43,6 +49,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string
         session.user.isAdmin = token.isAdmin as boolean
+        session.user.plan = (token.plan as string) ?? 'free'
       }
       return session
     },

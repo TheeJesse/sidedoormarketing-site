@@ -29,6 +29,7 @@ export default function DashboardPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
+  const [limitHit, setLimitHit] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({ name: '', city: '', state: '', zip: '', bio: '', radius: '25', contactMethod: 'email', contactValue: '' })
   const [offerInput, setOfferInput] = useState('')
   const [offerCat, setOfferCat] = useState('')
@@ -73,6 +74,12 @@ export default function DashboardPage() {
     setTimeout(() => setSaved(false), 2500)
   }
 
+  async function openBillingPortal() {
+    const res = await fetch('/api/stripe/portal', { method: 'POST' })
+    const data = await res.json()
+    if (data.url) window.location.href = data.url
+  }
+
   async function addOffer() {
     if (!offerInput.trim()) return
     const res = await fetch('/api/offers', {
@@ -80,6 +87,10 @@ export default function DashboardPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: offerInput.trim(), categoryId: offerCat || null }),
     })
+    if (res.status === 403) {
+      setLimitHit('offers')
+      return
+    }
     const offer = await res.json()
     setProfile(p => p ? { ...p, offers: [...p.offers, offer] } : p)
     setOfferInput('')
@@ -98,6 +109,10 @@ export default function DashboardPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: needInput.trim(), categoryId: needCat || null }),
     })
+    if (res.status === 403) {
+      setLimitHit('needs')
+      return
+    }
     const need = await res.json()
     setProfile(p => p ? { ...p, needs: [...p.needs, need] } : p)
     setNeedInput('')
@@ -131,7 +146,15 @@ export default function DashboardPage() {
         <div className="flex items-center gap-4">
           <Avatar name={profile.name} photoUrl={profile.profilePhoto} size="lg" />
           <div>
-            <h1 className="text-2xl font-bold text-earth-800">{profile.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-earth-800">{profile.name}</h1>
+              {session?.user.plan === 'neighbor' && (
+                <Badge variant="green">🌿 Neighbor</Badge>
+              )}
+              {session?.user.plan === 'pro' && (
+                <Badge variant="green">⭐ Pro</Badge>
+              )}
+            </div>
             <p className="text-earth-400 text-sm">{[profile.city, profile.state].filter(Boolean).join(', ')}</p>
           </div>
         </div>
@@ -142,6 +165,15 @@ export default function DashboardPage() {
           <Link href="/matches">
             <Button size="sm">See matches</Button>
           </Link>
+          {session?.user.plan && session.user.plan !== 'free' ? (
+            <Button variant="secondary" size="sm" onClick={openBillingPortal}>
+              Manage plan
+            </Button>
+          ) : (
+            <Link href="/pricing">
+              <Button variant="secondary" size="sm">Upgrade</Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -272,6 +304,29 @@ export default function DashboardPage() {
               ))}
             </ul>
           )}
+        </div>
+      )}
+
+      {/* Upgrade prompt */}
+      {limitHit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm mx-4 text-center">
+            <div className="text-4xl mb-3">🌳</div>
+            <h3 className="text-lg font-bold text-earth-800 mb-2">
+              You&apos;ve hit the free plan limit
+            </h3>
+            <p className="text-sm text-earth-500 mb-6">
+              Free accounts can have up to 5 {limitHit}. Upgrade to Neighbor or Pro for unlimited listings.
+            </p>
+            <div className="flex flex-col gap-2">
+              <Link href="/pricing">
+                <Button className="w-full">View plans</Button>
+              </Link>
+              <Button variant="ghost" className="w-full" onClick={() => setLimitHit(null)}>
+                Maybe later
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 

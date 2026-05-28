@@ -38,7 +38,10 @@ export async function GET(req: NextRequest) {
       needs: { include: { category: true } },
       reviews: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: [
+      { plan: 'desc' },
+      { createdAt: 'desc' },
+    ],
   })
 
   return NextResponse.json(users)

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 
@@ -94,14 +96,44 @@ const FAQ = [
     a: 'It\'s a visible signal on your profile that shows you\'re an active, paying member of the community. We\'ll be adding verified trade reviews soon.',
   },
   {
-    q: 'Is there a Stripe or payment integration yet?',
-    a: 'Not yet — this is an early access period. Sign up now for free, and paid plans will activate soon. Early members may receive founding member pricing.',
+    q: 'How do I manage my subscription?',
+    a: 'You can manage, upgrade, or cancel your subscription anytime from your Dashboard using the "Manage plan" button. Payments are handled securely through Stripe.',
   },
 ]
 
 export default function PricingPage() {
+  const { data: session } = useSession()
+  const router = useRouter()
   const [annual, setAnnual] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [loading, setLoading] = useState<string | null>(null)
+
+  async function handleUpgrade(planId: string) {
+    if (planId === 'free') {
+      router.push('/auth/signup')
+      return
+    }
+
+    if (!session) {
+      router.push(`/auth/signup?plan=${planId}&billing=${annual ? 'annual' : 'monthly'}`)
+      return
+    }
+
+    setLoading(planId)
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: planId, billing: annual ? 'annual' : 'monthly' }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } finally {
+      setLoading(null)
+    }
+  }
 
   return (
     <div className="flex flex-col">
@@ -175,14 +207,17 @@ export default function PricingPage() {
                   </div>
                 </div>
 
-                <Link
-                  href={plan.monthly === 0 ? '/auth/signup' : `/auth/signup?plan=${plan.id}&billing=${annual ? 'annual' : 'monthly'}`}
-                  className="mb-6"
-                >
-                  <Button variant={plan.ctaVariant} className="w-full" size="md">
-                    {plan.cta}
+                <div className="mb-6">
+                  <Button
+                    variant={plan.ctaVariant}
+                    className="w-full"
+                    size="md"
+                    onClick={() => handleUpgrade(plan.id)}
+                    disabled={loading === plan.id}
+                  >
+                    {loading === plan.id ? 'Redirecting…' : plan.cta}
                   </Button>
-                </Link>
+                </div>
 
                 <ul className="space-y-2.5 flex-1">
                   {plan.features.map((f, i) => (

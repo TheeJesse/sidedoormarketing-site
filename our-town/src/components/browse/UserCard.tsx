@@ -11,6 +11,7 @@ interface UserCardProps {
     bio: string | null
     radius: number
     profilePhoto: string | null
+    plan?: string
     offers: { id: string; title: string; category: { name: string; icon: string | null } | null }[]
     needs: { id: string; title: string; category: { name: string; icon: string | null } | null }[]
   }
@@ -28,9 +29,17 @@ export function UserCard({ user }: UserCardProps) {
         <div className="flex items-start gap-3">
           <Avatar name={user.name} photoUrl={user.profilePhoto} size="md" />
           <div className="min-w-0">
-            <h3 className="font-semibold text-earth-800 group-hover:text-brand-600 transition-colors truncate">
-              {user.name}
-            </h3>
+            <div className="flex items-center gap-1.5">
+              <h3 className="font-semibold text-earth-800 group-hover:text-brand-600 transition-colors truncate">
+                {user.name}
+              </h3>
+              {user.plan === 'neighbor' && (
+                <Badge variant="green">🌿 Neighbor</Badge>
+              )}
+              {user.plan === 'pro' && (
+                <Badge variant="green">⭐ Pro</Badge>
+              )}
+            </div>
             {location && (
               <p className="text-xs text-earth-400 flex items-center gap-1 mt-0.5">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
