@@ -15,7 +15,7 @@ export async function sendVerificationEmail(to: string, token: string) {
   const verifyUrl = `${BASE_URL}/api/auth/verify?token=${token}`
 
   await getResend().emails.send({
-    from: 'Our Town <noreply@thisisourtown.com>',
+    from: 'Our Town <noreply@thisisourtown.co>',
     to,
     subject: 'Verify your email — This Is Our Town',
     html: `
