@@ -4,6 +4,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
+import { ContactReveal } from '@/components/ui/ContactReveal'
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const user = await prisma.user.findUnique({ where: { id: params.id } })
@@ -73,19 +74,13 @@ export default async function ProfilePage({ params }: { params: { id: string } }
               <p className="text-xs text-earth-400 mt-1">📍 Serves within {user.radius} miles</p>
             </div>
 
-            {/* Contact */}
+            {/* Contact — hidden until clicked to prevent crawler scraping */}
             {user.contactValue && (
-              <div className="flex-shrink-0">
-                <a
-                  href={user.contactMethod === 'phone' ? `tel:${user.contactValue}` : `mailto:${user.contactValue}`}
-                  className="inline-block"
-                >
-                  <Button size="md">
-                    {user.contactMethod === 'phone' ? '📞' : '✉️'} Contact {user.name.split(' ')[0]}
-                  </Button>
-                </a>
-                <p className="text-xs text-earth-400 mt-1.5 text-center">{user.contactValue}</p>
-              </div>
+              <ContactReveal
+                name={user.name}
+                method={user.contactMethod || 'email'}
+                value={user.contactValue}
+              />
             )}
           </div>
 

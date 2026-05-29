@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 // Admin only: GET all users including hidden/unapproved
 export async function GET(_req: NextRequest) {
   const session = await getServerSession(authOptions)

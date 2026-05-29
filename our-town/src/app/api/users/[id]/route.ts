@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/users/[id] — public profile
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const user = await prisma.user.findUnique({
@@ -31,6 +33,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const body = await req.json()
   const { name, city, state, zip, bio, radius, contactMethod, contactValue, isHidden, isApproved, onboardingComplete } = body
+
+  if (name !== undefined && (typeof name !== 'string' || name.trim().length < 1 || name.length > 100)) {
+    return NextResponse.json({ error: 'Name must be 1–100 characters' }, { status: 400 })
+  }
+  if (radius !== undefined) {
+    const r = Number(radius)
+    if (isNaN(r) || r < 1 || r > 500) {
+      return NextResponse.json({ error: 'Radius must be 1–500 miles' }, { status: 400 })
+    }
+  }
+  if (bio !== undefined && typeof bio === 'string' && bio.length > 2000) {
+    return NextResponse.json({ error: 'Bio must be under 2000 characters' }, { status: 400 })
+  }
 
   const updated = await prisma.user.update({
     where: { id: params.id },

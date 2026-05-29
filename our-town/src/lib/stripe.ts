@@ -24,9 +24,9 @@ export function getPriceId(plan: string, billing: string): string | null {
   return PRICE_IDS[key] ?? null
 }
 
-export function planFromPriceId(priceId: string): string {
+export function planFromPriceId(priceId: string): string | null {
   for (const [key, id] of Object.entries(PRICE_IDS)) {
     if (id === priceId) return key.split('_')[0]
   }
-  return 'free'
+  return null
 }

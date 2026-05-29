@@ -22,9 +22,10 @@ model User {
   contactMethod String?
   // The value shown publicly (email address or phone number)
   contactValue  String?
-  emailVerified      DateTime?
-  verificationToken  String?
-  onboardingComplete Boolean  @default(false)
+  emailVerified              DateTime?
+  verificationToken          String?
+  verificationTokenExpiresAt DateTime?
+  onboardingComplete         Boolean  @default(false)
   isApproved    Boolean  @default(true)
   isHidden      Boolean  @default(false)
   isAdmin       Boolean  @default(false)

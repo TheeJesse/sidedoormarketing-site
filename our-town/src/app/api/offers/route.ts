@@ -11,7 +11,9 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { title, categoryId, description } = await req.json()
-  if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 })
+  if (!title || typeof title !== 'string' || title.trim().length < 1 || title.length > 200) {
+    return NextResponse.json({ error: 'Title is required and must be under 200 characters' }, { status: 400 })
+  }
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },

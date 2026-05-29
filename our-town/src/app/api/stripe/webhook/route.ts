@@ -40,7 +40,12 @@ export async function POST(req: NextRequest) {
       if (subscriptionId) {
         const subscription = await getStripe().subscriptions.retrieve(subscriptionId)
         const priceId = subscription.items.data[0]?.price.id
-        const plan = priceId ? planFromPriceId(priceId) : (session.metadata?.plan ?? 'free')
+        const plan = priceId ? planFromPriceId(priceId) : null
+
+        if (!plan) {
+          console.error(`Unknown Stripe price ID: ${priceId}`)
+          return NextResponse.json({ error: 'Unknown price ID' }, { status: 400 })
+        }
 
         await prisma.user.update({
           where: { id: userId },
@@ -77,7 +82,12 @@ export async function POST(req: NextRequest) {
 
       if (subscription.status === 'active') {
         const priceId = subscription.items.data[0]?.price.id
-        const plan = priceId ? planFromPriceId(priceId) : 'free'
+        const plan = priceId ? planFromPriceId(priceId) : null
+
+        if (!plan) {
+          console.error(`Unknown Stripe price ID on subscription update: ${priceId}`)
+          break
+        }
 
         await prisma.user.updateMany({
           where: { stripeCustomerId: customerId },

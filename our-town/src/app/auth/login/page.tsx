@@ -66,7 +66,13 @@ function LoginForm() {
 
           {params.get('error') === 'invalid-token' && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">
-              Invalid or expired verification link. Please request a new one.
+              Invalid verification link. Please request a new one.
+            </div>
+          )}
+
+          {params.get('error') === 'token-expired' && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">
+              Verification link has expired. Please request a new one.
             </div>
           )}
 
