@@ -106,7 +106,11 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  await sendVerificationEmail(email, verificationToken)
+  try {
+    await sendVerificationEmail(email, verificationToken)
+  } catch (err) {
+    console.error('Failed to send verification email:', err)
+  }
 
   const { passwordHash: _, verificationToken: _t, ...safe } = user
   return NextResponse.json(safe, { status: 201 })
