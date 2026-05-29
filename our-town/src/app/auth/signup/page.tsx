@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { signOut, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
@@ -8,6 +9,7 @@ import { Input } from '@/components/ui/Input'
 
 export default function SignupPage() {
   const router = useRouter()
+  const { status } = useSession()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -40,6 +42,9 @@ export default function SignupPage() {
         return
       }
 
+      if (status === 'authenticated') {
+        await signOut({ redirect: false })
+      }
       router.push(`/auth/verify-pending?email=${encodeURIComponent(form.email)}`)
     } catch {
       setError('Something went wrong. Please try again.')
